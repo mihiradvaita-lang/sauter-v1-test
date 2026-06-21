@@ -332,13 +332,33 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
   cursor: pointer;
   opacity: 0;
   animation: card-in 400ms var(--eo) forwards;
-  transition: background 200ms var(--eo), transform 220ms var(--sp), border-color 200ms var(--eo), box-shadow 200ms var(--eo);
+  transition: background 200ms var(--eo), border-color 200ms var(--eo), box-shadow 200ms var(--eo);
+  will-change: transform;
+}
+
+/* Float once card-in completes */
+.vault-tile.floating {
+  animation: vault-float var(--float-dur, 3.5s) ease-in-out var(--float-phase, 0s) infinite;
+}
+/* Hover pauses the float — tile "settles" under the cursor */
+.vault-tile.floating:hover {
+  animation-play-state: paused;
 }
 .vault-tile:hover {
   background: var(--s-card2);
-  transform: translateY(-2px);
   border-color: var(--s-border2);
-  box-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  box-shadow: 0 6px 22px rgba(0,0,0,0.32), 0 0 22px rgba(212,146,46,0.07);
+}
+
+/* Size variants — scales with note count */
+.vault-tile[data-size="0"] { min-height: 72px; }
+.vault-tile[data-size="1"] { min-height: 88px; }
+.vault-tile[data-size="2"] { min-height: 104px; }
+.vault-tile[data-size="3"] { min-height: 120px; }
+
+@keyframes vault-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
 }
 
 .vault-tile-icon {
@@ -822,26 +842,63 @@ function renderVaultGrid() {
   if (!grid) return;
   grid.innerHTML = '';
 
+  // Float durations & phases — different per tile so they drift like water
+  const floatDurs   = [3.4, 3.1, 3.7, 2.9, 3.6, 3.2, 4.0, 3.5];
+  // Size based on note count (with a subtle visual pattern even when empty)
+  const emptyPattern = [2, 1, 2, 0, 1, 0, 1, 1]; // hints at size even at 0 notes
+
   CATS.forEach((cat, i) => {
     const count = S.items.filter(it => it.category === cat).length;
     const color = CAT_COLORS[cat];
     const icon  = CAT_ICONS[cat];
 
+    // Compute size tier 0-3
+    const size = count === 0 ? emptyPattern[i % emptyPattern.length]
+               : count <= 2  ? 1
+               : count <= 6  ? 2
+               : 3;
+
     const tile = document.createElement('div');
     tile.className = 'vault-tile';
+    tile.dataset.size = size;
     tile.style.animationDelay = (i * 55) + 'ms';
+    // Float params set now; .floating class added after card-in
+    tile.style.setProperty('--float-dur',   floatDurs[i % floatDurs.length] + 's');
+    tile.style.setProperty('--float-phase', '-' + (i * 0.55).toFixed(2) + 's');
+
     tile.innerHTML = `
       <div class="vault-tile-icon" style="background:${color}18;color:${color};">${icon}</div>
       <div class="vault-tile-name">${esc(cat)}</div>
       <div class="vault-tile-count">${count > 0 ? count + (count===1?' note':' notes') : '—'}</div>
     `;
-    tile.addEventListener('click', () => {
+
+    // Click → ripple on canvas + open compose
+    tile.addEventListener('click', (e) => {
+      const cv = document.getElementById('gravity-canvas');
+      if (cv) {
+        const r = cv.getBoundingClientRect();
+        const tr = tile.getBoundingClientRect();
+        Gravity.ripple(
+          (tr.left + tr.width  / 2) - r.left,
+          (tr.top  + tr.height / 2) - r.top
+        );
+      }
       openCompose();
       S.selCat = cat;
       renderCatBtns();
       updateSaveBtn();
     });
+
     grid.appendChild(tile);
+  });
+
+  // After card-in animations finish, switch each tile to float
+  CATS.forEach((_, i) => {
+    const delay = i * 55 + 420; // card-in delay + duration
+    setTimeout(() => {
+      const tiles = grid.querySelectorAll('.vault-tile');
+      if (tiles[i]) tiles[i].classList.add('floating');
+    }, delay);
   });
 }
 
@@ -1195,8 +1252,9 @@ const Gravity = (() => {
 
   const GOLD    = '212,146,46';   // --gold: #D4922E
   const SPACING = 75;             // px between dot grid nodes
-  const BASE_R  = 2.2;            // resting dot radius
-  const BASE_A  = 0.15;           // resting dot alpha
+  const BASE_R  = 2.0;            // resting dot radius
+  const BASE_A  = 0.11;           // resting dot alpha (dimmed)
+  const ripples = [];             // { x, y, r, life }
 
   function setup() {
     canvas = document.getElementById('gravity-canvas');
@@ -1235,14 +1293,21 @@ const Gravity = (() => {
     const cx = hasMouse ? mouse.x : W / 2;
     const cy = hasMouse ? mouse.y : H / 2;
 
-    /* Radial glow at gravity well */
+    /* Radial glow at gravity well — dimmed */
     const glowR = Math.max(W, H) * 0.40 * breathe;
     const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
-    grd.addColorStop(0,   `rgba(${GOLD},${hasMouse ? 0.13 : 0.09 * breathe})`);
-    grd.addColorStop(0.4, `rgba(${GOLD},${hasMouse ? 0.04 : 0.025 * breathe})`);
+    grd.addColorStop(0,   `rgba(${GOLD},${hasMouse ? 0.08 : 0.055 * breathe})`);
+    grd.addColorStop(0.4, `rgba(${GOLD},${hasMouse ? 0.025 : 0.015 * breathe})`);
     grd.addColorStop(1,   `rgba(${GOLD},0)`);
     ctx.fillStyle = grd;
     ctx.fillRect(0, 0, W, H);
+
+    /* Advance ripples */
+    for (let ri = ripples.length - 1; ri >= 0; ri--) {
+      ripples[ri].r    += 5.5;
+      ripples[ri].life -= 0.022;
+      if (ripples[ri].life <= 0) ripples.splice(ri, 1);
+    }
 
     /* Dot grid */
     const cols = Math.ceil(W / SPACING) + 1;
@@ -1276,9 +1341,19 @@ const Gravity = (() => {
         const influence = hasMouse ? 260 : Math.min(W, H) * 0.48 * breathe;
         const prox = Math.max(0, 1 - d / influence);
 
-        /* Dot grows and brightens near well */
-        const r     = BASE_R + prox * 3.8;
-        const alpha = Math.min(BASE_A + prox * 0.55, 0.72);
+        /* Ripple boost — brightens dots as ring passes over them */
+        let ripBoost = 0;
+        for (const rp of ripples) {
+          const rdx = px - rp.x, rdy = py - rp.y;
+          const ringDist = Math.abs(Math.sqrt(rdx * rdx + rdy * rdy) - rp.r);
+          if (ringDist < 28) {
+            ripBoost += (1 - ringDist / 28) * rp.life * 0.7;
+          }
+        }
+
+        /* Dot grows and brightens near well + ripple */
+        const r     = BASE_R + prox * 3.5 + ripBoost * 3.0;
+        const alpha = Math.min(BASE_A + prox * 0.52 + ripBoost * 0.55, 0.80);
 
         ctx.beginPath();
         ctx.arc(px, py, r, 0, Math.PI * 2);
@@ -1302,6 +1377,9 @@ const Gravity = (() => {
     stop() {
       running = false;
       if (animId) { cancelAnimationFrame(animId); animId = null; }
+    },
+    ripple(x, y) {
+      ripples.push({ x, y, r: 0, life: 1.0 });
     }
   };
 })();
