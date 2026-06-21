@@ -226,9 +226,7 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
 
 /* ===== VIEW: VAULT EMPTY ===== */
 #v-empty {
-  align-items: stretch;
-  justify-content: flex-start;
-  overflow-y: auto;
+  overflow: hidden;
   /* position: absolute + inset: 0 inherited from .view — creates containing block for canvas */
 }
 
@@ -243,16 +241,21 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
   display: block;
 }
 
-/* Keep hero + vault grid above canvas */
-.empty-hero, .vault-section { position: relative; z-index: 1; }
-
+/* Hero: absolute-centered in canvas, above dot field */
 .empty-hero {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -58%);
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 36px 40px 20px;
   text-align: center;
+  pointer-events: none;
+  white-space: nowrap;
 }
+.empty-hero > * { pointer-events: auto; }
 
 /* Animated SAUTER wordmark */
 .sauter-wordmark {
@@ -300,40 +303,43 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
 }
 .empty-btn:hover { background: rgba(212,146,46,0.18); transform: translateY(-1px); }
 
-/* Vault grid */
+/* Vault section — covers the full canvas, tiles float freely inside */
 .vault-section {
-  padding: 16px 28px 28px;
-  flex: 1;
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  pointer-events: none;
+  z-index: 1;
 }
-
-.vault-section-title {
-  font-size: 9px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--t4);
-  font-weight: 600;
-  margin-bottom: 10px;
-  padding-left: 2px;
-}
-
+.vault-section-title { display: none; }
 .vault-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 7px;
+  display: block;
+  position: absolute;
+  inset: 0;
 }
 
+/* Each tile: absolutely placed at a scatter coordinate */
 .vault-tile {
+  position: absolute;
+  width: 114px;
   background: var(--s-card);
-  border: 1px solid var(--s-border);
-  border-radius: 12px;
-  padding: 11px 8px;
+  border: 1px solid rgba(212,146,46,0.15);
+  border-radius: 13px;
+  padding: 13px 10px;
   display: flex; flex-direction: column;
-  align-items: center; gap: 5px;
+  align-items: center; gap: 6px;
   cursor: pointer;
+  pointer-events: auto;
   opacity: 0;
   animation: card-in 400ms var(--eo) forwards;
-  transition: background 200ms var(--eo), border-color 200ms var(--eo), box-shadow 200ms var(--eo);
+  transition: background 220ms var(--eo), border-color 220ms var(--eo), box-shadow 220ms var(--eo);
   will-change: transform;
+  /* Persistent amber halo — tile acts as a warm light source */
+  box-shadow:
+    0 0 0 1px rgba(212,146,46,0.10),
+    0 10px 36px rgba(0,0,0,0.60),
+    0 0  55px rgba(212,146,46,0.20),
+    0 0 110px rgba(212,146,46,0.08);
 }
 
 /* Float once card-in completes */
@@ -341,25 +347,31 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
   opacity: 1;
   animation: vault-float var(--float-dur, 3.5s) ease-in-out var(--float-phase, 0s) infinite;
 }
-/* Hover pauses the float — tile "settles" under the cursor */
-.vault-tile.floating:hover {
-  animation-play-state: paused;
-}
+/* Hover: pause float + intensify glow */
+.vault-tile.floating:hover { animation-play-state: paused; }
 .vault-tile:hover {
   background: var(--s-card2);
-  border-color: var(--s-border2);
-  box-shadow: 0 6px 22px rgba(0,0,0,0.32), 0 0 22px rgba(212,146,46,0.07);
+  border-color: rgba(212,146,46,0.30);
+  box-shadow:
+    0 0 0 1px rgba(212,146,46,0.26),
+    0 10px 36px rgba(0,0,0,0.60),
+    0 0  70px rgba(212,146,46,0.38),
+    0 0 140px rgba(212,146,46,0.16);
 }
 
-/* Size variants — scales with note count */
-.vault-tile[data-size="0"] { min-height: 72px; }
-.vault-tile[data-size="1"] { min-height: 88px; }
-.vault-tile[data-size="2"] { min-height: 104px; }
-.vault-tile[data-size="3"] { min-height: 120px; }
+/* Size variants — slightly larger for busier vaults */
+.vault-tile[data-size="0"] { padding: 11px 9px; }
+.vault-tile[data-size="1"] { padding: 13px 10px; }
+.vault-tile[data-size="2"] { padding: 15px 10px; width: 122px; }
+.vault-tile[data-size="3"] { padding: 17px 10px; width: 130px; }
 
+/* Organic water float — slight X drift so tiles feel independent */
 @keyframes vault-float {
-  0%, 100% { transform: translateY(0px); }
-  50%       { transform: translateY(-8px); }
+  0%   { transform: translateY(0px)   translateX(0px); }
+  25%  { transform: translateY(-5px)  translateX(2px); }
+  50%  { transform: translateY(-9px)  translateX(0px); }
+  75%  { transform: translateY(-4px)  translateX(-2px); }
+  100% { transform: translateY(0px)   translateX(0px); }
 }
 
 .vault-tile-icon {
@@ -843,17 +855,27 @@ function renderVaultGrid() {
   if (!grid) return;
   grid.innerHTML = '';
 
-  // Float durations & phases — different per tile so they drift like water
-  const floatDurs   = [3.4, 3.1, 3.7, 2.9, 3.6, 3.2, 4.0, 3.5];
-  // Size based on note count (with a subtle visual pattern even when empty)
-  const emptyPattern = [2, 1, 2, 0, 1, 0, 1, 1]; // hints at size even at 0 notes
+  // Scattered positions (% of container) — mirrors Recall free-float layout
+  // Each point is the TOP-LEFT of the tile; chosen to avoid the center hero area
+  const TILE_POS = [
+    { left: '6%',  top: '10%' },  // Personal  — top-left
+    { left: '60%', top: '4%'  },  // Work      — top-right
+    { left: '80%', top: '30%' },  // Reading   — right-mid
+    { left: '68%', top: '63%' },  // Ideas     — bottom-right
+    { left: '37%', top: '74%' },  // Goals     — bottom-center
+    { left: '7%',  top: '60%' },  // Health    — left-lower
+    { left: '4%',  top: '33%' },  // Finance   — left-mid
+    { left: '46%', top: '6%'  },  // Other     — top-center
+  ];
+
+  const floatDurs    = [3.4, 3.1, 3.7, 2.9, 3.6, 3.2, 4.0, 3.5];
+  const emptyPattern = [2, 1, 2, 0, 1, 0, 1, 1];
 
   CATS.forEach((cat, i) => {
     const count = S.items.filter(it => it.category === cat).length;
     const color = CAT_COLORS[cat];
     const icon  = CAT_ICONS[cat];
 
-    // Compute size tier 0-3
     const size = count === 0 ? emptyPattern[i % emptyPattern.length]
                : count <= 2  ? 1
                : count <= 6  ? 2
@@ -862,10 +884,15 @@ function renderVaultGrid() {
     const tile = document.createElement('div');
     tile.className = 'vault-tile';
     tile.dataset.size = size;
-    tile.style.animationDelay = (i * 55) + 'ms';
-    // Float params set now; .floating class added after card-in
+
+    // Scatter position
+    const pos = TILE_POS[i % TILE_POS.length];
+    tile.style.left = pos.left;
+    tile.style.top  = pos.top;
+
+    tile.style.animationDelay = (i * 60) + 'ms';
     tile.style.setProperty('--float-dur',   floatDurs[i % floatDurs.length] + 's');
-    tile.style.setProperty('--float-phase', '-' + (i * 0.55).toFixed(2) + 's');
+    tile.style.setProperty('--float-phase', '-' + (i * 0.62).toFixed(2) + 's');
 
     tile.innerHTML = `
       <div class="vault-tile-icon" style="background:${color}18;color:${color};">${icon}</div>
@@ -874,10 +901,10 @@ function renderVaultGrid() {
     `;
 
     // Click → ripple on canvas + open compose
-    tile.addEventListener('click', (e) => {
+    tile.addEventListener('click', () => {
       const cv = document.getElementById('gravity-canvas');
       if (cv) {
-        const r = cv.getBoundingClientRect();
+        const r  = cv.getBoundingClientRect();
         const tr = tile.getBoundingClientRect();
         Gravity.ripple(
           (tr.left + tr.width  / 2) - r.left,
@@ -893,17 +920,29 @@ function renderVaultGrid() {
     grid.appendChild(tile);
   });
 
-  // After card-in animations finish, switch each tile to float
+  // After card-in: switch to float + register tile centres with Gravity for dot glow
   CATS.forEach((_, i) => {
-    const delay = i * 55 + 430; // card-in delay + duration
     setTimeout(() => {
       const tiles = grid.querySelectorAll('.vault-tile');
       if (tiles[i]) {
-        tiles[i].style.opacity = '1'; // lock visible before animation swap
+        tiles[i].style.opacity = '1';
         tiles[i].classList.add('floating');
       }
-    }, delay);
+    }, i * 60 + 440);
   });
+
+  // Give tiles time to paint then hand their centres to Gravity
+  setTimeout(() => {
+    const cv = document.getElementById('gravity-canvas');
+    if (!cv) return;
+    const cr = cv.getBoundingClientRect();
+    const glows = [...grid.querySelectorAll('.vault-tile')].map(t => {
+      const tr = t.getBoundingClientRect();
+      return { x: (tr.left + tr.width / 2) - cr.left,
+               y: (tr.top + tr.height / 2) - cr.top };
+    });
+    Gravity.setTileGlows(glows);
+  }, 600);
 }
 
 /* ---------- RENDER SIDEBAR LIST ---------- */
@@ -1254,11 +1293,12 @@ const Gravity = (() => {
   let canvas, ctx, animId, running = false, t = 0;
   const mouse = { x: null, y: null };
 
-  const GOLD    = '212,146,46';   // --gold: #D4922E
-  const SPACING = 75;             // px between dot grid nodes
-  const BASE_R  = 2.0;            // resting dot radius
-  const BASE_A  = 0.11;           // resting dot alpha (dimmed)
-  const ripples = [];             // { x, y, r, life }
+  const GOLD      = '212,146,46'; // --gold: #D4922E
+  const SPACING   = 75;           // px between dot grid nodes
+  const BASE_R    = 2.0;          // resting dot radius
+  const BASE_A    = 0.11;         // resting dot alpha (dimmed)
+  const ripples   = [];           // { x, y, r, life }
+  const tileGlows = [];           // { x, y } — vault tile centres as light sources
 
   function setup() {
     canvas = document.getElementById('gravity-canvas');
@@ -1305,6 +1345,16 @@ const Gravity = (() => {
     grd.addColorStop(1,   `rgba(${GOLD},0)`);
     ctx.fillStyle = grd;
     ctx.fillRect(0, 0, W, H);
+
+    /* Per-tile warm halo — each vault tile glows on the canvas background */
+    for (const tg of tileGlows) {
+      const hG = ctx.createRadialGradient(tg.x, tg.y, 0, tg.x, tg.y, 130);
+      hG.addColorStop(0,   `rgba(${GOLD},0.13)`);
+      hG.addColorStop(0.45,`rgba(${GOLD},0.04)`);
+      hG.addColorStop(1,   `rgba(${GOLD},0)`);
+      ctx.fillStyle = hG;
+      ctx.fillRect(0, 0, W, H);
+    }
 
     /* Advance ripples */
     for (let ri = ripples.length - 1; ri >= 0; ri--) {
@@ -1355,9 +1405,20 @@ const Gravity = (() => {
           }
         }
 
-        /* Dot grows and brightens near well + ripple */
-        const r     = BASE_R + prox * 3.5 + ripBoost * 3.0;
-        const alpha = Math.min(BASE_A + prox * 0.52 + ripBoost * 0.55, 0.80);
+        /* Tile glow boost — dots near vault tile centres glow brighter */
+        let tileBoost = 0;
+        for (const tg of tileGlows) {
+          const tdx = px - tg.x, tdy = py - tg.y;
+          const tDist = Math.sqrt(tdx * tdx + tdy * tdy);
+          if (tDist < 155) {
+            const f = 1 - tDist / 155;
+            tileBoost += f * f * 0.90;
+          }
+        }
+
+        /* Dot grows and brightens near well + ripple + tile glow */
+        const r     = BASE_R + prox * 3.5 + ripBoost * 3.0 + tileBoost * 3.8;
+        const alpha = Math.min(BASE_A + prox * 0.52 + ripBoost * 0.55 + tileBoost * 0.42, 0.90);
 
         ctx.beginPath();
         ctx.arc(px, py, r, 0, Math.PI * 2);
@@ -1384,6 +1445,10 @@ const Gravity = (() => {
     },
     ripple(x, y) {
       ripples.push({ x, y, r: 0, life: 1.0 });
+    },
+    setTileGlows(positions) {
+      tileGlows.length = 0;
+      for (const p of positions) tileGlows.push({ x: p.x, y: p.y });
     }
   };
 })();
