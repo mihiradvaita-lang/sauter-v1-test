@@ -229,7 +229,22 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
   align-items: stretch;
   justify-content: flex-start;
   overflow-y: auto;
+  position: relative;
 }
+
+/* Gravity field canvas — full-area background layer */
+#gravity-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  display: block;
+}
+
+/* Keep hero + vault grid above canvas */
+.empty-hero, .vault-section { position: relative; z-index: 1; }
 
 .empty-hero {
   display: flex;
@@ -629,6 +644,7 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
 
     <!-- VAULT EMPTY — animated SAUTER + vault grid -->
     <div class="view active" id="v-empty">
+      <canvas id="gravity-canvas"></canvas>
       <div class="empty-hero">
         <div class="sauter-wordmark">
           <span>S</span><span>A</span><span>U</span><span>T</span><span>E</span><span>R</span>
@@ -797,6 +813,7 @@ function gotoView(v) {
   if (prev) { prev.classList.remove('active'); prev.classList.add('exit'); setTimeout(() => prev.classList.remove('exit'), 310); }
   if (next) { next.classList.remove('exit'); requestAnimationFrame(() => requestAnimationFrame(() => next.classList.add('active'))); }
   S.view = v;
+  if (v === 'empty') Gravity.start(); else Gravity.stop();
 }
 
 /* ---------- RENDER VAULT GRID ---------- */
@@ -1169,6 +1186,145 @@ function wire() {
 }
 
 /* ===========================
+   GRAVITY FIELD GRID
+   =========================== */
+const Gravity = (() => {
+  let canvas, ctx, animId, running = false, t = 0;
+  const mouse = { x: null, y: null };
+
+  function setup() {
+    canvas = document.getElementById('gravity-canvas');
+    if (!canvas) return;
+    ctx = canvas.getContext('2d');
+
+    const view = document.getElementById('v-empty');
+    view.addEventListener('mousemove', e => {
+      const r = canvas.getBoundingClientRect();
+      mouse.x = e.clientX - r.left;
+      mouse.y = e.clientY - r.top;
+    });
+    view.addEventListener('mouseleave', () => { mouse.x = null; mouse.y = null; });
+    window.addEventListener('resize', resize);
+    resize();
+  }
+
+  function resize() {
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.offsetWidth, H = canvas.offsetHeight;
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function pt(gi, gj, W, H) {
+    const SPACE = 60;
+    const cols = Math.ceil(W / SPACE);
+    const rows = Math.ceil(H / SPACE);
+    const ox = (W - cols * SPACE) / 2;
+    const oy = (H - rows * SPACE) / 2;
+    const bx = ox + gi * SPACE;
+    const by = oy + gj * SPACE;
+
+    /* Ambient undulation */
+    const tt = t * 0.0007;
+    const wx = Math.sin(tt + gi * 0.38 + gj * 0.29) * 3;
+    const wy = Math.cos(tt * 0.8 + gi * 0.27 + gj * 0.41) * 3;
+
+    let dx = wx, dy = wy;
+
+    /* Gravity pull toward mouse */
+    if (mouse.x !== null) {
+      const ex = bx - mouse.x, ey = by - mouse.y;
+      const d2 = ex * ex + ey * ey;
+      const d  = Math.sqrt(d2) || 0.001;
+      const G  = 14000, soft = 70;
+      const pull = Math.min(G / (d2 + soft * soft), 40);
+      dx -= (ex / d) * pull;
+      dy -= (ey / d) * pull;
+    }
+
+    return { x: bx + dx, y: by + dy };
+  }
+
+  function frame() {
+    if (!running || !canvas) return;
+    const W = canvas.offsetWidth, H = canvas.offsetHeight;
+    ctx.clearRect(0, 0, W, H);
+
+    const SPACE = 60;
+    const cols = Math.ceil(W / SPACE);
+    const rows = Math.ceil(H / SPACE);
+    const hasMouse = mouse.x !== null;
+    const baseAlpha = hasMouse ? 0.13 : 0.09;
+
+    /* Grid lines */
+    ctx.lineWidth = 0.8;
+    ctx.lineCap = 'round';
+
+    for (let gj = 0; gj <= rows; gj++) {
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(212,146,46,${baseAlpha})`;
+      for (let gi = 0; gi <= cols; gi++) {
+        const p = pt(gi, gj, W, H);
+        gi === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+      }
+      ctx.stroke();
+    }
+    for (let gi = 0; gi <= cols; gi++) {
+      ctx.beginPath();
+      ctx.strokeStyle = `rgba(212,146,46,${baseAlpha})`;
+      for (let gj = 0; gj <= rows; gj++) {
+        const p = pt(gi, gj, W, H);
+        gj === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+      }
+      ctx.stroke();
+    }
+
+    /* Intersection dots + glow near mouse */
+    if (hasMouse) {
+      for (let gi = 0; gi <= cols; gi++) {
+        for (let gj = 0; gj <= rows; gj++) {
+          const p = pt(gi, gj, W, H);
+          const dx = p.x - mouse.x, dy = p.y - mouse.y;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d < 160) {
+            const a = (1 - d / 160) * 0.55;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 1.4, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(212,146,46,${a})`;
+            ctx.fill();
+          }
+        }
+      }
+      /* Radial halo */
+      const g = ctx.createRadialGradient(mouse.x, mouse.y, 0, mouse.x, mouse.y, 160);
+      g.addColorStop(0, 'rgba(212,146,46,0.07)');
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    t++;
+    animId = requestAnimationFrame(frame);
+  }
+
+  return {
+    start() {
+      if (running) return;
+      if (!canvas) setup();
+      running = true;
+      resize();
+      frame();
+    },
+    stop() {
+      running = false;
+      if (animId) { cancelAnimationFrame(animId); animId = null; }
+    }
+  };
+})();
+
+/* ===========================
    INIT
    =========================== */
 function init() {
@@ -1178,7 +1334,8 @@ function init() {
   renderList();
   renderVaultGrid();
 
-  gotoView(S.items.length === 0 ? 'empty' : 'idle');
+  const startView = S.items.length === 0 ? 'empty' : 'idle';
+  gotoView(startView);
 
   checkOllama();
   setInterval(checkOllama, 30000);
