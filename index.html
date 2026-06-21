@@ -229,7 +229,7 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
   align-items: stretch;
   justify-content: flex-start;
   overflow-y: auto;
-  position: relative;
+  /* position: absolute + inset: 0 inherited from .view — creates containing block for canvas */
 }
 
 /* Gravity field canvas — full-area background layer */
@@ -1256,7 +1256,7 @@ const Gravity = (() => {
     const cols = Math.ceil(W / SPACE);
     const rows = Math.ceil(H / SPACE);
     const hasMouse = mouse.x !== null;
-    const baseAlpha = hasMouse ? 0.13 : 0.09;
+    const baseAlpha = hasMouse ? 0.18 : 0.13;
 
     /* Grid lines */
     ctx.lineWidth = 0.8;
