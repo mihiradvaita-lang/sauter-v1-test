@@ -895,10 +895,13 @@ function renderVaultGrid() {
 
   // After card-in animations finish, switch each tile to float
   CATS.forEach((_, i) => {
-    const delay = i * 55 + 420; // card-in delay + duration
+    const delay = i * 55 + 430; // card-in delay + duration
     setTimeout(() => {
       const tiles = grid.querySelectorAll('.vault-tile');
-      if (tiles[i]) tiles[i].classList.add('floating');
+      if (tiles[i]) {
+        tiles[i].style.opacity = '1'; // lock visible before animation swap
+        tiles[i].classList.add('floating');
+      }
     }, delay);
   });
 }
