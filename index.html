@@ -689,9 +689,68 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
   color: var(--gold2); border: 1px solid rgba(212,146,46,0.3);
 }
 
-/* Cat row — shown only when AI offline */
-.cat-row-manual { display: none; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 13px; }
-.cat-row-manual.show { display: flex; }
+/* Cat row — deprecated, replaced by vault picker */
+.cat-row-manual { display: none !important; }
+
+/* ===== VAULT PICKER MODAL ===== */
+.vault-picker-overlay {
+  position: fixed; inset: 0; z-index: 600;
+  background: rgba(6,4,2,0.72);
+  backdrop-filter: blur(6px);
+  display: none; align-items: flex-end; justify-content: center;
+  opacity: 0; transition: opacity 220ms var(--eo);
+}
+.vault-picker-overlay.open  { display: flex; }
+.vault-picker-overlay.visible { opacity: 1; }
+.vault-picker-sheet {
+  width: 100%; max-width: 620px;
+  background: var(--s-card2);
+  border: 1px solid var(--s-border2);
+  border-bottom: none;
+  border-radius: 20px 20px 0 0;
+  padding: 24px 26px 38px;
+  transform: translateY(28px);
+  transition: transform 270ms var(--eo);
+}
+.vault-picker-overlay.visible .vault-picker-sheet { transform: translateY(0); }
+.vp-handle { width: 36px; height: 4px; background: var(--t4); border-radius: 2px; margin: 0 auto 18px; }
+.vp-title { font-size: 15px; font-weight: 600; color: var(--t1); margin-bottom: 4px; }
+.vp-sub   { font-size: 12px; color: var(--t4); margin-bottom: 20px; }
+.vp-grid  { display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin-bottom: 16px; }
+.vp-tile {
+  display: flex; flex-direction: column; align-items: center; gap: 7px;
+  padding: 13px 8px 11px;
+  background: var(--s-s1); border: 1px solid var(--s-border);
+  border-radius: 13px; cursor: pointer;
+  transition: all 160ms var(--eo);
+}
+.vp-tile:hover { background: var(--s-card); border-color: rgba(212,146,46,0.30); transform: translateY(-2px); }
+.vp-tile.current { border-color: rgba(212,146,46,0.50); background: rgba(212,146,46,0.09); }
+.vp-tile-icon { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+.vp-tile-name { font-size: 10px; color: var(--t2); font-weight: 500; text-align: center; }
+.vp-footer { display: flex; gap: 8px; }
+.vp-ai-btn {
+  flex: 1; padding: 10px 14px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  background: rgba(212,146,46,0.09); border: 1px solid rgba(212,146,46,0.22);
+  border-radius: 10px; font-size: 12px; color: var(--gold2); font-weight: 500;
+  transition: all 170ms var(--eo);
+}
+.vp-ai-btn:hover { background: rgba(212,146,46,0.16); }
+.vp-cancel-btn {
+  padding: 10px 18px;
+  background: transparent; border: 1px solid var(--s-border);
+  border-radius: 10px; font-size: 12px; color: var(--t3);
+  transition: all 170ms var(--eo);
+}
+.vp-cancel-btn:hover { color: var(--t2); }
+.move-vault-btn {
+  padding: 7px 14px;
+  background: transparent; border: 1px solid var(--s-border);
+  border-radius: 8px; font-size: 12px; color: var(--t3);
+  transition: all 200ms var(--eo); flex-shrink: 0;
+}
+.move-vault-btn:hover { color: var(--gold); border-color: rgba(212,146,46,0.32); }
 
 /* ===== CHAT VIEW ===== */
 #v-chat { display: flex; flex-direction: column; background: var(--page); }
@@ -949,10 +1008,6 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
       <input type="file" id="photo-file-input" accept="image/*" style="display:none">
 
       <div class="compose-foot">
-        <!-- Manual category picker — shown only when AI is offline -->
-        <div class="cat-row-manual" id="cat-row">
-          <span class="cat-label-txt">Category</span>
-        </div>
         <button id="save-btn" disabled>Save</button>
       </div>
     </div>
@@ -992,7 +1047,7 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
       </div>
 
       <div class="detail-foot">
-        <span class="d-saved" id="d-saved"></span>
+        <button class="move-vault-btn" id="move-vault-btn">&#x2932; Move</button>
         <div class="del-wrap">
           <div class="del-confirm-wrap" id="del-confirm">
             <span>Delete this note?</span>
@@ -1190,7 +1245,6 @@ function renderVaultGrid() {
       }
       openCompose();
       S.selCat = cat;
-      renderCatBtns();
       updateSaveBtn();
     });
 
@@ -1313,10 +1367,8 @@ function updateSaveBtn() {
   const b        = document.getElementById('body-input').value.trim();
   const hasLink  = (S.composeLink  || '').trim().length > 0;
   const hasPhoto = !!S.composePhoto;
-  const hasContent = !!(t || b || hasLink || hasPhoto);
-  // When AI offline, a plain note also needs a category selected
-  const needsCat = !S.aiOnline && !hasLink && !hasPhoto && !S.selCat;
-  document.getElementById('save-btn').disabled = !hasContent || needsCat;
+  // Enable as soon as there's content — vault chosen at save time via picker
+  document.getElementById('save-btn').disabled = !(t || b || hasLink || hasPhoto);
 }
 
 /* ---------- OPEN COMPOSE ---------- */
@@ -1344,33 +1396,86 @@ function openCompose() {
   if (photoImg) photoImg.src = '';
   if (photoBtn) photoBtn.classList.remove('active');
 
-  renderCatBtns(); renderList();
+  renderList();
   gotoView('compose');
   setTimeout(() => document.getElementById('title-input').focus(), 340);
 }
 
-/* ---------- SAVE NOTE (async — AI auto-categorises) ---------- */
+/* ---------- VAULT PICKER ---------- */
+let _vpMode = 'save';
+
+function showVaultPicker(mode) {
+  _vpMode = mode || 'save';
+  const overlay = document.getElementById('vault-picker-overlay');
+  const titleEl = document.getElementById('vp-title');
+  const subEl   = document.getElementById('vp-sub');
+  const grid    = document.getElementById('vp-grid');
+  const aiBtn   = document.getElementById('vp-ai-btn');
+  titleEl.textContent = _vpMode === 'move' ? 'Move to Vault' : 'Choose a Vault';
+  subEl.textContent   = _vpMode === 'move' ? 'Select the vault to move this into:' : 'Where should this be saved?';
+  aiBtn.style.display = (S.aiOnline && _vpMode === 'save') ? 'flex' : 'none';
+  grid.innerHTML = '';
+  CATS.forEach(cat => {
+    const color  = CAT_COLORS[cat];
+    const icon   = CAT_ICONS[cat];
+    const tile   = document.createElement('button');
+    tile.className = 'vp-tile';
+    if (_vpMode === 'move') {
+      const cur = S.items.find(i => i.id === S.activeId);
+      if (cur && cur.category === cat) tile.classList.add('current');
+    }
+    tile.innerHTML = `<div class="vp-tile-icon" style="background:${color}18;color:${color};">${icon}</div><div class="vp-tile-name">${esc(cat)}</div>`;
+    tile.addEventListener('click', () => pickVault(cat));
+    grid.appendChild(tile);
+  });
+  overlay.classList.add('open');
+  requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('visible')));
+}
+
+function closeVaultPicker() {
+  const overlay = document.getElementById('vault-picker-overlay');
+  overlay.classList.remove('visible');
+  setTimeout(() => overlay.classList.remove('open'), 270);
+}
+
+async function pickVault(cat) {
+  closeVaultPicker();
+  if (_vpMode === 'move') {
+    const it = S.items.find(i => i.id === S.activeId);
+    if (it) { it.category = cat; store(); renderCatFilters(); renderVaultGrid(); openDetail(it.id); }
+    return;
+  }
+  S.selCat = cat;
+  await _finishSave();
+}
+
+/* ---------- SAVE NOTE ---------- */
+let _pendingSave = null;
+
 async function saveNote() {
   const title = document.getElementById('title-input').value.trim();
   const body  = document.getElementById('body-input').value.trim();
   const url   = (S.composeLink  || '').trim();
   const image = S.composePhoto  || null;
   if (!title && !body && !url && !image) return;
+  _pendingSave = { title, body, url, image };
+  if (S.selCat || S.aiOnline) { await _finishSave(); return; }
+  showVaultPicker('save');
+}
 
+async function _finishSave() {
+  if (!_pendingSave) return;
+  const { title, body, url, image } = _pendingSave;
+  _pendingSave = null;
   const btn = document.getElementById('save-btn');
   btn.disabled = true;
   btn.classList.add('saving');
-
-  // Determine item type
   const type = url ? 'link' : image ? 'photo' : 'note';
-
-  // AI auto-categorise (if online)
   let category = S.selCat || 'Other';
-  if (S.aiOnline) {
+  if (S.aiOnline && !S.selCat) {
     btn.textContent = '✦ Categorising…';
     category = await aiAutoCategorize(title, body || url || '');
   }
-
   const item = {
     id: uid(), title, body, category, type,
     ...(url   ? { url }   : {}),
@@ -1379,12 +1484,11 @@ async function saveNote() {
   };
   S.items.unshift(item);
   store();
-
   btn.classList.remove('saving');
   btn.textContent = 'Save';
   S.composeLink  = null;
   S.composePhoto = null;
-
+  S.selCat       = null;
   renderCatFilters();
   renderVaultGrid();
   openDetail(item.id);
@@ -1754,6 +1858,18 @@ function wire() {
     document.getElementById('del-btn').style.display = '';
   });
   document.getElementById('del-yes').addEventListener('click', deleteActive);
+
+  /* --- Move vault button --- */
+  document.getElementById('move-vault-btn').addEventListener('click', () => { showVaultPicker('move'); });
+
+  /* --- Vault picker overlay --- */
+  document.getElementById('vp-cancel-btn').addEventListener('click', closeVaultPicker);
+  document.getElementById('vp-ai-btn').addEventListener('click', async () => {
+    closeVaultPicker(); S.selCat = null; await _finishSave();
+  });
+  document.getElementById('vault-picker-overlay').addEventListener('click', e => {
+    if (e.target.id === 'vault-picker-overlay') closeVaultPicker();
+  });
 }
 
 /* ===========================
@@ -1968,5 +2084,19 @@ function init() {
 
 init();
 </script>
+
+<!-- VAULT PICKER MODAL -->
+<div class="vault-picker-overlay" id="vault-picker-overlay">
+  <div class="vault-picker-sheet">
+    <div class="vp-handle"></div>
+    <div class="vp-title" id="vp-title">Choose a Vault</div>
+    <div class="vp-sub"   id="vp-sub">Where should this be saved?</div>
+    <div class="vp-grid"  id="vp-grid"></div>
+    <div class="vp-footer">
+      <button class="vp-ai-btn"     id="vp-ai-btn">&#x2726; Let AI decide</button>
+      <button class="vp-cancel-btn" id="vp-cancel-btn">Cancel</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
