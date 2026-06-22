@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#D4922E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="./manifest.json">
 <title>SAUTER</title>
 <style>
 /* ===== RESET ===== */
@@ -622,6 +627,187 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
 }
 .del-yes:hover { background: #d46464; }
 
+/* ===== COMPOSE ATTACH BAR ===== */
+.compose-attach-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 40px 12px;
+}
+.attach-btn {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--t3);
+  background: var(--s-s1); border: 1px solid var(--s-border);
+  padding: 5px 12px; border-radius: 20px;
+  transition: all 180ms var(--eo);
+}
+.attach-btn:hover { color: var(--t2); border-color: var(--s-border2); }
+.attach-btn.active { color: var(--gold); border-color: rgba(212,146,46,0.35); background: var(--gold-dim); }
+
+/* Link input row */
+.compose-link-row {
+  display: none;
+  align-items: center; gap: 9px;
+  padding: 0 40px 14px;
+}
+.compose-link-row.show { display: flex; }
+#link-url-input {
+  flex: 1; background: var(--s-s1);
+  border: 1px solid var(--s-border);
+  border-radius: 9px; padding: 8px 13px;
+  font-size: 13px; color: var(--t2); outline: none;
+  transition: border-color 180ms var(--eo);
+}
+#link-url-input:focus { border-color: rgba(212,146,46,0.4); }
+#link-url-input::placeholder { color: var(--t4); }
+
+/* Photo preview */
+.compose-photo-preview {
+  display: none;
+  padding: 0 40px 14px;
+  position: relative; width: fit-content;
+}
+.compose-photo-preview.show { display: block; }
+.compose-photo-preview img {
+  width: 120px; height: 88px;
+  object-fit: cover; border-radius: 10px;
+  border: 1px solid var(--s-border);
+  display: block;
+}
+.compose-photo-remove {
+  position: absolute; top: -3px; left: 157px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(0,0,0,0.72); border: 1px solid var(--s-border2);
+  color: var(--t2); font-size: 10px; line-height: 17px;
+  text-align: center; cursor: pointer;
+  transition: background 160ms;
+}
+.compose-photo-remove:hover { background: rgba(200,60,60,0.85); }
+
+/* Save btn states */
+#save-btn.saving {
+  opacity: 0.68; cursor: default;
+  background: var(--gold-dim);
+  color: var(--gold2); border: 1px solid rgba(212,146,46,0.3);
+}
+
+/* Cat row — shown only when AI offline */
+.cat-row-manual { display: none; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 13px; }
+.cat-row-manual.show { display: flex; }
+
+/* ===== CHAT VIEW ===== */
+#v-chat { display: flex; flex-direction: column; background: var(--page); }
+
+.chat-bar {
+  padding: 14px 40px;
+  border-bottom: 1px solid var(--s-border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.chat-bar-center {
+  font-size: 13px; font-weight: 600; color: var(--t1);
+  display: flex; align-items: center; gap: 7px;
+}
+.chat-bar-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--t4); transition: background 400ms var(--eo);
+}
+.chat-bar-dot.online { background: var(--green); }
+.chat-offline-note {
+  font-size: 11px; color: var(--t4); font-weight: 400;
+}
+
+.chat-messages {
+  flex: 1; overflow-y: auto;
+  padding: 24px 40px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.chat-messages::-webkit-scrollbar { width: 3px; }
+.chat-messages::-webkit-scrollbar-thumb { background: var(--t4); border-radius: 2px; }
+
+.chat-welcome {
+  text-align: center;
+  padding: 52px 0 20px;
+  color: var(--t4); font-size: 13px; line-height: 1.75;
+}
+.chat-welcome-icon { font-size: 28px; color: var(--gold); opacity: 0.65; margin-bottom: 10px; }
+
+.chat-msg {
+  max-width: 82%;
+  animation: msg-in 260ms var(--eo) both;
+}
+@keyframes msg-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+.chat-msg.user { align-self: flex-end; }
+.chat-msg.ai   { align-self: flex-start; }
+
+.chat-bubble {
+  padding: 10px 14px;
+  font-size: 13px; line-height: 1.68;
+  white-space: pre-wrap; word-break: break-word;
+}
+.chat-msg.user .chat-bubble {
+  background: var(--gold); color: var(--page);
+  border-radius: 14px 14px 2px 14px;
+}
+.chat-msg.ai .chat-bubble {
+  background: var(--s-card); border: 1px solid var(--s-border);
+  color: var(--t2); border-radius: 14px 14px 14px 2px;
+}
+.chat-msg.thinking .chat-bubble { animation: ai-pulse 1.4s ease-in-out infinite; }
+
+.chat-input-wrap {
+  border-top: 1px solid var(--s-border);
+  background: var(--page2);
+  padding: 14px 40px;
+  display: flex; align-items: flex-end; gap: 10px;
+  flex-shrink: 0;
+}
+#chat-input {
+  flex: 1; background: var(--s-s1);
+  border: 1px solid var(--s-border);
+  border-radius: 12px; padding: 10px 14px;
+  font-size: 14px; color: var(--t2); outline: none;
+  resize: none; min-height: 42px; max-height: 120px; overflow-y: auto;
+  line-height: 1.5; font-family: inherit;
+  transition: border-color 180ms var(--eo);
+}
+#chat-input:focus { border-color: rgba(212,146,46,0.4); }
+#chat-input::placeholder { color: var(--t4); }
+#chat-send-btn {
+  width: 38px; height: 38px; flex-shrink: 0; border-radius: 50%;
+  background: var(--gold); border: none;
+  color: var(--page); display: flex; align-items: center; justify-content: center;
+  transition: background 180ms var(--eo), transform 140ms;
+}
+#chat-send-btn:hover:not(:disabled) { background: var(--gold2); transform: scale(1.06); }
+#chat-send-btn:active:not(:disabled) { transform: scale(0.96); }
+#chat-send-btn:disabled { opacity: 0.32; cursor: not-allowed; }
+
+/* Sidebar AI chat button */
+.sb-chat-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; padding: 8px 14px; margin-bottom: 8px;
+  background: transparent; border: 1px solid var(--s-border);
+  border-radius: 9px; font-size: 12px; color: var(--t3);
+  transition: all 180ms var(--eo);
+}
+.sb-chat-btn:hover { color: var(--gold); border-color: rgba(212,146,46,0.3); background: var(--gold-dim); }
+
+/* Link in detail */
+.detail-link-anchor {
+  display: flex; align-items: center; gap: 9px;
+  margin: 0 40px 20px;
+  padding: 10px 14px;
+  background: var(--s-s1); border: 1px solid var(--s-border);
+  border-radius: 10px; text-decoration: none;
+  transition: border-color 180ms var(--eo);
+}
+.detail-link-anchor:hover { border-color: rgba(212,146,46,0.35); }
+.detail-link-url-txt {
+  flex: 1; font-size: 12px; color: var(--gold2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.detail-img-wrap { margin: 0 40px 20px; }
+.detail-img-wrap img { max-width: 100%; border-radius: 12px; border: 1px solid var(--s-border); display: block; }
+
 /* ===== HIGHLIGHT ===== */
 mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; padding: 0 1px; }
 
@@ -663,6 +849,12 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
     </div>
 
     <div class="sb-foot">
+      <button class="sb-chat-btn" id="chat-btn">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+          <path d="M1.5 3C1.5 2.17 2.17 1.5 3 1.5h7c.83 0 1.5.67 1.5 1.5v4c0 .83-.67 1.5-1.5 1.5H7.5L5 11v-2.5H3C2.17 8.5 1.5 7.83 1.5 7V3z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+        </svg>
+        Ask AI
+      </button>
       <button id="new-btn">
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
           <path d="M6.5 1.5v10M1.5 6.5h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
@@ -711,10 +903,10 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
           <span id="status-txt">Checking AI…</span>
           <div class="ai-help-pop" id="ai-help-pop">
             <strong>AI is offline</strong>
-            Needs Ollama running locally. Start it with:
+            Start Ollama locally:
             <code>OLLAMA_ORIGINS=* ollama serve</code>
-            Then pull a model:
-            <code>ollama pull llama3.2</code>
+            Pull the Qwen model (tiny, fast):
+            <code>ollama pull qwen2.5:0.5b</code>
             <button class="ai-retry-btn" id="ai-retry-btn">↺ Retry connection</button>
           </div>
         </div>
@@ -723,15 +915,45 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
       <input id="title-input" type="text" placeholder="Untitled" autocomplete="off" spellcheck="false">
       <textarea id="body-input" placeholder="Start writing…" spellcheck="true"></textarea>
 
+      <!-- Attach bar -->
+      <div class="compose-attach-bar">
+        <button class="attach-btn" id="link-attach-btn" title="Add a link">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M5 4H3.5a2.5 2.5 0 000 5H5M7 8h1.5a2.5 2.5 0 000-5H7M4.5 6h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+          </svg>
+          Link
+        </button>
+        <button class="attach-btn" id="photo-attach-btn" title="Attach a photo">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <rect x="1" y="2.5" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.2"/>
+            <circle cx="6" cy="6" r="1.8" stroke="currentColor" stroke-width="1.2"/>
+            <circle cx="9" cy="4" r="0.6" fill="currentColor"/>
+          </svg>
+          Photo
+        </button>
+      </div>
+
+      <!-- Link URL input (shown when link attached) -->
+      <div class="compose-link-row" id="compose-link-row">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" style="flex-shrink:0;color:var(--t4)">
+          <path d="M5.5 4.5H4a3 3 0 000 6h1.5M7.5 8.5H9a3 3 0 000-6H7.5M4.5 6.5h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        <input id="link-url-input" type="url" placeholder="Paste URL…" autocomplete="off" spellcheck="false">
+      </div>
+
+      <!-- Photo preview (shown when photo attached) -->
+      <div class="compose-photo-preview" id="compose-photo-preview">
+        <img id="compose-photo-img" src="" alt="Attached photo">
+        <button class="compose-photo-remove" id="compose-photo-remove" title="Remove photo">×</button>
+      </div>
+      <input type="file" id="photo-file-input" accept="image/*" style="display:none">
+
       <div class="compose-foot">
-        <div class="cat-row" id="cat-row">
+        <!-- Manual category picker — shown only when AI is offline -->
+        <div class="cat-row-manual" id="cat-row">
           <span class="cat-label-txt">Category</span>
-          <div id="ai-sug">
-            <span id="ai-txt">✦ AI suggests: —</span>
-            <button class="ai-accept" id="ai-accept-btn">Accept</button>
-          </div>
         </div>
-        <button id="save-btn" disabled>Save Note</button>
+        <button id="save-btn" disabled>Save</button>
       </div>
     </div>
 
@@ -752,6 +974,20 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
 
       <div class="detail-scroll">
         <div id="d-title"></div>
+        <!-- Link bar (shown for link-type items) -->
+        <a class="detail-link-anchor" id="d-link-bar" target="_blank" rel="noopener noreferrer" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;color:var(--gold)">
+            <path d="M6 5H4.5a3 3 0 000 6H6M8 9h1.5a3 3 0 000-6H8M5 7h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+          <span class="detail-link-url-txt" id="d-link-url"></span>
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" style="flex-shrink:0;color:var(--t4)">
+            <path d="M2.5 8.5l6-6M5 2.5h3.5v3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+        <!-- Image (shown for photo-type items) -->
+        <div class="detail-img-wrap" id="d-img-wrap" style="display:none">
+          <img id="d-img" src="" alt="Attached image">
+        </div>
         <div id="d-body"></div>
       </div>
 
@@ -768,6 +1004,41 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
       </div>
     </div>
 
+    <!-- CHAT ASSISTANT -->
+    <div class="view" id="v-chat">
+      <div class="chat-bar">
+        <button class="back-btn" id="chat-back">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+            <path d="M8 2.5L4 6.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Back
+        </button>
+        <div class="chat-bar-center">
+          <div class="chat-bar-dot" id="chat-dot"></div>
+          AI Assistant
+          <span class="chat-offline-note" id="chat-offline-note"></span>
+        </div>
+        <div style="width:60px"></div>
+      </div>
+
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-welcome">
+          <div class="chat-welcome-icon">✦</div>
+          Ask me anything about your notes.<br>
+          <span style="color:var(--t4);font-size:12px;">Find things, ask for summaries, explore your vault.</span>
+        </div>
+      </div>
+
+      <div class="chat-input-wrap">
+        <textarea id="chat-input" placeholder="Ask anything about your notes…" rows="1"></textarea>
+        <button id="chat-send-btn" title="Send">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M7 11V3M3.5 6.5L7 3l3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
   </main>
 </div>
 
@@ -776,8 +1047,10 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
    SAUTER v1
    =========================== */
 
-const STORE_KEY = 'sauter_items';
-const OLLAMA   = 'http://localhost:11434';
+const STORE_KEY    = 'sauter_items';
+const OLLAMA       = 'http://localhost:11434';
+const OLLAMA_MODEL = 'qwen2.5:0.5b';          // smallest Qwen — local categorisation + chat
+const MODEL_CHAIN  = [OLLAMA_MODEL, 'qwen2.5', 'qwen2', 'qwen', 'llama3.2', 'phi3'];
 
 const CATS = ['Personal','Work','Reading','Ideas','Goals','Health','Finance','Other'];
 const CAT_COLORS = {
@@ -793,8 +1066,9 @@ const CAT_ICONS = {
 let S = {
   items: [], view: 'empty', activeId: null,
   search: '', catFilter: '', selCat: null,
-  aiOnline: false, aiThinking: false, aiSugCat: null,
+  aiOnline: false, aiThinking: false,
   delPending: false, helpOpen: false,
+  composeLink: null, composePhoto: null,
 };
 
 /* ---------- STORAGE ---------- */
@@ -833,7 +1107,10 @@ function catStyle(cat) {
 function filtered() {
   return S.items.filter(it => {
     const q = S.search.toLowerCase();
-    const matchQ   = !q || it.title.toLowerCase().includes(q) || it.body.toLowerCase().includes(q);
+    const matchQ   = !q
+      || (it.title || '').toLowerCase().includes(q)
+      || (it.body  || '').toLowerCase().includes(q)
+      || (it.url   || '').toLowerCase().includes(q);
     const matchCat = !S.catFilter || it.category === S.catFilter;
     return matchQ && matchCat;
   });
@@ -964,14 +1241,16 @@ function renderList() {
     const catC = CAT_COLORS[it.category] || CAT_COLORS.Other;
     el.style.setProperty('--item-accent', catC);
 
+    const typePrefix = it.type === 'link' ? '🔗 ' : it.type === 'photo' ? '📷 ' : '';
+    const excerpt    = (it.url || it.body || '');
     el.innerHTML = `
-      <div class="ic-title">${hl(it.title || 'Untitled', S.search)}</div>
+      <div class="ic-title">${typePrefix}${hl(it.title || 'Untitled', S.search)}</div>
       <div class="ic-expand">
         <div class="ic-meta">
           <span class="ic-badge" style="${catStyle(it.category)}">${esc(it.category)}</span>
           <span class="ic-date">${fmt(it.createdAt)}</span>
         </div>
-        <div class="ic-excerpt">${hl(it.body.slice(0,115), S.search)}${it.body.length > 115 ? '&hellip;' : ''}</div>
+        <div class="ic-excerpt">${hl(excerpt.slice(0,115), S.search)}${excerpt.length > 115 ? '&hellip;' : ''}</div>
       </div>
     `;
     el.addEventListener('click', () => openDetail(it.id));
@@ -1004,62 +1283,110 @@ function renderCatFilters() {
   });
 }
 
-/* ---------- RENDER CAT BUTTONS (compose) ---------- */
+/* ---------- RENDER CAT BUTTONS (compose — shown only when AI offline) ---------- */
 function renderCatBtns() {
   const row = document.getElementById('cat-row');
+  if (!row) return;
   [...row.querySelectorAll('.cat-sel-btn')].forEach(b => b.remove());
-  const aiSug = document.getElementById('ai-sug');
 
-  CATS.forEach(cat => {
-    const b = document.createElement('button');
-    b.className = 'cat-sel-btn' + (S.selCat === cat ? ' selected' : '');
-    b.textContent = cat;
-    if (S.selCat === cat) {
-      const c = CAT_COLORS[cat];
-      b.style.cssText = `color:${c};border-color:${c}60;background:${c}18;`;
-    }
-    b.addEventListener('click', () => {
-      S.selCat = cat; S.aiSugCat = null;
-      aiSug.classList.remove('show','thinking');
-      renderCatBtns(); updateSaveBtn();
+  // Only show manual category picker when Ollama is offline
+  row.classList.toggle('show', !S.aiOnline);
+
+  if (!S.aiOnline) {
+    CATS.forEach(cat => {
+      const b = document.createElement('button');
+      b.className = 'cat-sel-btn' + (S.selCat === cat ? ' selected' : '');
+      b.textContent = cat;
+      if (S.selCat === cat) {
+        const c = CAT_COLORS[cat];
+        b.style.cssText = `color:${c};border-color:${c}60;background:${c}18;`;
+      }
+      b.addEventListener('click', () => { S.selCat = cat; renderCatBtns(); updateSaveBtn(); });
+      row.appendChild(b);
     });
-    row.insertBefore(b, aiSug);
-  });
+  }
 }
 
 /* ---------- SAVE BUTTON STATE ---------- */
 function updateSaveBtn() {
-  const t = document.getElementById('title-input').value.trim();
-  const b = document.getElementById('body-input').value.trim();
-  document.getElementById('save-btn').disabled = !(t || b) || !S.selCat;
+  const t        = document.getElementById('title-input').value.trim();
+  const b        = document.getElementById('body-input').value.trim();
+  const hasLink  = (S.composeLink  || '').trim().length > 0;
+  const hasPhoto = !!S.composePhoto;
+  const hasContent = !!(t || b || hasLink || hasPhoto);
+  // When AI offline, a plain note also needs a category selected
+  const needsCat = !S.aiOnline && !hasLink && !hasPhoto && !S.selCat;
+  document.getElementById('save-btn').disabled = !hasContent || needsCat;
 }
 
 /* ---------- OPEN COMPOSE ---------- */
 function openCompose() {
-  S.activeId = null; S.selCat = null; S.aiSugCat = null;
+  S.activeId = null; S.selCat = null;
   S.aiThinking = false; S.delPending = false;
+  S.composeLink = null; S.composePhoto = null;
 
   document.getElementById('title-input').value = '';
   document.getElementById('body-input').value  = '';
-  document.getElementById('save-btn').disabled = true;
-  document.getElementById('ai-sug').classList.remove('show','thinking');
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.textContent = 'Save'; btn.classList.remove('saving');
+
+  // Reset attachment UI
+  const linkRow  = document.getElementById('compose-link-row');
+  const linkInp  = document.getElementById('link-url-input');
+  const linkBtn  = document.getElementById('link-attach-btn');
+  const photoPre = document.getElementById('compose-photo-preview');
+  const photoImg = document.getElementById('compose-photo-img');
+  const photoBtn = document.getElementById('photo-attach-btn');
+  if (linkRow)  linkRow.classList.remove('show');
+  if (linkInp)  linkInp.value = '';
+  if (linkBtn)  linkBtn.classList.remove('active');
+  if (photoPre) photoPre.classList.remove('show');
+  if (photoImg) photoImg.src = '';
+  if (photoBtn) photoBtn.classList.remove('active');
 
   renderCatBtns(); renderList();
   gotoView('compose');
   setTimeout(() => document.getElementById('title-input').focus(), 340);
 }
 
-/* ---------- SAVE NOTE ---------- */
-function saveNote() {
-  const title    = document.getElementById('title-input').value.trim();
-  const body     = document.getElementById('body-input').value.trim();
-  const category = S.selCat || 'Other';
-  if (!title && !body) return;
+/* ---------- SAVE NOTE (async — AI auto-categorises) ---------- */
+async function saveNote() {
+  const title = document.getElementById('title-input').value.trim();
+  const body  = document.getElementById('body-input').value.trim();
+  const url   = (S.composeLink  || '').trim();
+  const image = S.composePhoto  || null;
+  if (!title && !body && !url && !image) return;
 
-  const item = { id: uid(), title, body, category, createdAt: new Date().toISOString() };
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.classList.add('saving');
+
+  // Determine item type
+  const type = url ? 'link' : image ? 'photo' : 'note';
+
+  // AI auto-categorise (if online)
+  let category = S.selCat || 'Other';
+  if (S.aiOnline) {
+    btn.textContent = '✦ Categorising…';
+    category = await aiAutoCategorize(title, body || url || '');
+  }
+
+  const item = {
+    id: uid(), title, body, category, type,
+    ...(url   ? { url }   : {}),
+    ...(image ? { image } : {}),
+    createdAt: new Date().toISOString(),
+  };
   S.items.unshift(item);
   store();
+
+  btn.classList.remove('saving');
+  btn.textContent = 'Save';
+  S.composeLink  = null;
+  S.composePhoto = null;
+
   renderCatFilters();
+  renderVaultGrid();
   openDetail(item.id);
 }
 
@@ -1070,12 +1397,33 @@ function openDetail(id) {
 
   S.activeId = id; S.delPending = false;
 
-  document.getElementById('d-badge').textContent  = it.category;
-  document.getElementById('d-badge').style.cssText = catStyle(it.category);
-  document.getElementById('d-date').textContent   = fmt(it.createdAt);
-  document.getElementById('d-title').textContent  = it.title || 'Untitled';
-  document.getElementById('d-body').textContent   = it.body;
-  document.getElementById('d-saved').textContent  = 'Saved ' + fmtLong(it.createdAt);
+  document.getElementById('d-badge').textContent   = it.category;
+  document.getElementById('d-badge').style.cssText  = catStyle(it.category);
+  document.getElementById('d-date').textContent    = fmt(it.createdAt);
+  document.getElementById('d-title').textContent   = it.title || 'Untitled';
+  document.getElementById('d-body').textContent    = it.body || '';
+  document.getElementById('d-saved').textContent   = 'Saved ' + fmtLong(it.createdAt);
+
+  // Link bar
+  const linkBar = document.getElementById('d-link-bar');
+  const linkUrl = document.getElementById('d-link-url');
+  if (linkBar && linkUrl) {
+    if (it.url) {
+      linkBar.href = it.url;
+      linkUrl.textContent = it.url;
+      linkBar.style.display = 'flex';
+    } else {
+      linkBar.style.display = 'none';
+    }
+  }
+
+  // Image
+  const imgWrap = document.getElementById('d-img-wrap');
+  const imgEl   = document.getElementById('d-img');
+  if (imgWrap && imgEl) {
+    if (it.image) { imgEl.src = it.image; imgWrap.style.display = 'block'; }
+    else          { imgWrap.style.display = 'none'; }
+  }
 
   document.getElementById('del-confirm').classList.remove('show');
   document.getElementById('del-btn').style.display = '';
@@ -1106,71 +1454,87 @@ async function checkOllama() {
 }
 
 function updateOllamaUI() {
-  const dot  = document.getElementById('status-dot');
-  const txt  = document.getElementById('status-txt');
-  const pill = document.getElementById('ollama-pill');
+  const dot     = document.getElementById('status-dot');
+  const txt     = document.getElementById('status-txt');
+  const pill    = document.getElementById('ollama-pill');
+  const chatDot = document.getElementById('chat-dot');
+  const chatNote= document.getElementById('chat-offline-note');
 
   dot.className = 'status-dot' + (S.aiOnline ? ' online' : '');
+  if (chatDot)  chatDot.className  = 'chat-bar-dot' + (S.aiOnline ? ' online' : '');
+  if (chatNote) chatNote.textContent = S.aiOnline ? '' : '(offline)';
 
   if (S.aiOnline) {
-    txt.textContent = 'AI ready';
+    txt.textContent = '✦ AI ready — ' + OLLAMA_MODEL;
     pill.classList.add('online');
   } else {
     txt.textContent = 'AI offline';
     pill.classList.remove('online');
   }
+
+  // Refresh compose category row visibility
+  renderCatBtns();
+  updateSaveBtn();
 }
 
-let aiTimer = null;
-function scheduleAI() {
-  clearTimeout(aiTimer);
-  if (!S.aiOnline) return;
-  aiTimer = setTimeout(runAI, 1300);
-}
+/* --- Auto-categorise on save (returns category string) --- */
+async function aiAutoCategorize(title, content) {
+  const text = [title, content].filter(Boolean).join(' ').slice(0, 600);
+  const prompt =
+    `You are a personal note categoriser. Choose exactly ONE category for the content below.\n` +
+    `Categories: ${CATS.join(', ')}\n\n` +
+    `Content: "${text}"\n\n` +
+    `Reply with ONLY the category name — nothing else.`;
 
-async function runAI() {
-  if (!S.aiOnline || S.aiThinking) return;
-  const title = document.getElementById('title-input').value.trim();
-  const body  = document.getElementById('body-input').value.trim();
-  if (body.length < 20 && title.length < 6) return;
-
-  S.aiThinking = true;
-  const sug = document.getElementById('ai-sug');
-  const txt = document.getElementById('ai-txt');
-  sug.classList.add('show','thinking');
-  txt.textContent = '✦ AI is thinking…';
-
-  const prompt = `You are a personal note categorizer. Given the note below, pick exactly ONE category from: Personal, Work, Reading, Ideas, Goals, Health, Finance, Other.\n\nReply with ONLY the category name. Nothing else.\n\nTitle: ${title}\nNote: ${body.substring(0,500)}\n\nCategory:`;
-
-  let suggestion = null;
-  const models = ['llama3.2','llama3','mistral','phi3','gemma'];
-
-  for (const model of models) {
+  for (const model of MODEL_CHAIN) {
     try {
       const r = await fetch(OLLAMA + '/api/generate', {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ model, prompt, stream: false, options: { temperature: 0.1, num_predict: 12 } }),
-        signal: AbortSignal.timeout(18000),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, prompt, stream: false, options: { temperature: 0.1, num_predict: 15 } }),
+        signal: AbortSignal.timeout(12000),
       });
       if (!r.ok) continue;
-      const d = await r.json();
+      const d   = await r.json();
       const raw = (d.response || '').trim();
-      suggestion = CATS.find(c => raw.toLowerCase().includes(c.toLowerCase())) || null;
-      if (suggestion) break;
+      const cat = CATS.find(c => raw.toLowerCase().includes(c.toLowerCase()));
+      if (cat) return cat;
     } catch { continue; }
   }
 
-  S.aiThinking = false;
-  sug.classList.remove('thinking');
+  return S.selCat || 'Other';
+}
 
-  if (suggestion) {
-    S.aiSugCat = suggestion;
-    txt.textContent = `✦ AI suggests: ${suggestion}`;
-    sug.classList.add('show');
-  } else {
-    sug.classList.remove('show');
+/* --- Chat assistant — answers questions about the vault --- */
+async function aiChatQuery(message) {
+  const noteCtx = S.items.slice(0, 50).map((it, i) => {
+    const preview = (it.url || it.body || '').slice(0, 160);
+    return `[${i + 1}] ${it.category} — "${it.title || 'Untitled'}": ${preview}`;
+  }).join('\n') || '(no notes saved yet)';
+
+  const prompt =
+    `You are a helpful assistant for SAUTER, a personal note-taking app. ` +
+    `The user has ${S.items.length} saved items.\n\n` +
+    `Vault contents:\n${noteCtx}\n\n` +
+    `User: ${message}\n\n` +
+    `Answer naturally and concisely. Reference specific notes when relevant. Under 160 words.`;
+
+  for (const model of MODEL_CHAIN) {
+    try {
+      const r = await fetch(OLLAMA + '/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, prompt, stream: false, options: { temperature: 0.35, num_predict: 250 } }),
+        signal: AbortSignal.timeout(20000),
+      });
+      if (!r.ok) continue;
+      const d = await r.json();
+      const resp = (d.response || '').trim();
+      if (resp) return resp;
+    } catch { continue; }
   }
+
+  return 'AI is not available. Make sure Ollama is running:\nOLLAMA_ORIGINS=* ollama serve';
 }
 
 /* ===========================
@@ -1242,14 +1606,121 @@ function wire() {
 
   const titleI = document.getElementById('title-input');
   const bodyI  = document.getElementById('body-input');
-  titleI.addEventListener('input', () => { updateSaveBtn(); scheduleAI(); });
-  bodyI.addEventListener('input',  () => { updateSaveBtn(); scheduleAI(); });
+  titleI.addEventListener('input', updateSaveBtn);
+  bodyI.addEventListener('input',  updateSaveBtn);
 
-  document.getElementById('ai-accept-btn').addEventListener('click', () => {
-    if (!S.aiSugCat) return;
-    S.selCat = S.aiSugCat; S.aiSugCat = null;
-    document.getElementById('ai-sug').classList.remove('show','thinking');
-    renderCatBtns(); updateSaveBtn();
+  /* --- Link attach --- */
+  const linkAttachBtn = document.getElementById('link-attach-btn');
+  const linkRow       = document.getElementById('compose-link-row');
+  const linkUrlInp    = document.getElementById('link-url-input');
+  linkAttachBtn.addEventListener('click', () => {
+    const showing = linkRow.classList.toggle('show');
+    linkAttachBtn.classList.toggle('active', showing);
+    if (showing) { linkUrlInp.focus(); }
+    else         { S.composeLink = null; linkUrlInp.value = ''; }
+    updateSaveBtn();
+  });
+  linkUrlInp.addEventListener('input', () => { S.composeLink = linkUrlInp.value; updateSaveBtn(); });
+
+  /* --- Photo attach --- */
+  const photoAttachBtn = document.getElementById('photo-attach-btn');
+  const photoFileInp   = document.getElementById('photo-file-input');
+  const photoPre       = document.getElementById('compose-photo-preview');
+  const photoImg       = document.getElementById('compose-photo-img');
+  const photoRemove    = document.getElementById('compose-photo-remove');
+  photoAttachBtn.addEventListener('click', () => photoFileInp.click());
+  photoFileInp.addEventListener('change', () => {
+    const file = photoFileInp.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 800;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else       { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const cvs = document.createElement('canvas');
+        cvs.width = w; cvs.height = h;
+        cvs.getContext('2d').drawImage(img, 0, 0, w, h);
+        const compressed = cvs.toDataURL('image/jpeg', 0.72);
+        S.composePhoto = compressed;
+        photoImg.src   = compressed;
+        photoPre.classList.add('show');
+        photoAttachBtn.classList.add('active');
+        updateSaveBtn();
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+    photoFileInp.value = '';
+  });
+  photoRemove.addEventListener('click', () => {
+    S.composePhoto = null;
+    photoImg.src   = '';
+    photoPre.classList.remove('show');
+    photoAttachBtn.classList.remove('active');
+    updateSaveBtn();
+  });
+
+  /* --- Chat assistant --- */
+  document.getElementById('chat-btn').addEventListener('click', () => {
+    gotoView('chat');
+    const chatDot  = document.getElementById('chat-dot');
+    const chatNote = document.getElementById('chat-offline-note');
+    if (chatDot)  chatDot.className  = 'chat-bar-dot' + (S.aiOnline ? ' online' : '');
+    if (chatNote) chatNote.textContent = S.aiOnline ? '' : '(offline)';
+    setTimeout(() => document.getElementById('chat-input').focus(), 360);
+  });
+  document.getElementById('chat-back').addEventListener('click', () => {
+    gotoView(S.items.length ? 'idle' : 'empty');
+  });
+
+  const chatInp  = document.getElementById('chat-input');
+  const chatSend = document.getElementById('chat-send-btn');
+
+  function appendChatMsg(role, text, thinking = false) {
+    const msgs = document.getElementById('chat-messages');
+    const wrap = document.createElement('div');
+    wrap.className = 'chat-msg ' + role + (thinking ? ' thinking' : '');
+    const bub = document.createElement('div');
+    bub.className = 'chat-bubble';
+    bub.textContent = text;
+    wrap.appendChild(bub);
+    msgs.appendChild(wrap);
+    msgs.scrollTop = msgs.scrollHeight;
+    return wrap;
+  }
+
+  async function sendChat() {
+    const msg = chatInp.value.trim();
+    if (!msg) return;
+    chatInp.value = '';
+    chatInp.style.height = '';
+
+    appendChatMsg('user', msg);
+    const thinking = appendChatMsg('ai', '✦ Thinking…', true);
+    chatSend.disabled = true;
+
+    const reply = S.aiOnline
+      ? await aiChatQuery(msg)
+      : 'Ollama is offline. Run:\nOLLAMA_ORIGINS=* ollama serve\nthen pull qwen2.5:0.5b';
+
+    thinking.remove();
+    appendChatMsg('ai', reply);
+    chatSend.disabled = false;
+    document.getElementById('chat-messages').scrollTop = 99999;
+  }
+
+  chatSend.addEventListener('click', sendChat);
+  chatInp.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+  });
+  chatInp.addEventListener('input', () => {
+    chatInp.style.height = 'auto';
+    chatInp.style.height = Math.min(chatInp.scrollHeight, 120) + 'px';
   });
 
   /* Ollama pill — click when offline shows help */
@@ -1468,6 +1939,31 @@ function init() {
 
   checkOllama();
   setInterval(checkOllama, 30000);
+
+  // Handle Web Share Target (GET-based) — fills compose from ?title=&text=&url=
+  const params     = new URLSearchParams(location.search);
+  const shareTitle = params.get('title') || '';
+  const shareText  = params.get('text')  || '';
+  const shareUrl   = params.get('url')   || '';
+  if (shareTitle || shareText || shareUrl) {
+    openCompose();
+    if (shareTitle) document.getElementById('title-input').value = shareTitle;
+    if (shareText)  document.getElementById('body-input').value  = shareText;
+    if (shareUrl) {
+      document.getElementById('compose-link-row').classList.add('show');
+      document.getElementById('link-attach-btn').classList.add('active');
+      document.getElementById('link-url-input').value = shareUrl;
+      S.composeLink = shareUrl;
+    }
+    updateSaveBtn();
+    // Remove share params from URL without reload
+    history.replaceState({}, '', location.pathname);
+  }
+
+  // Register service worker for PWA / share target
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
 }
 
 init();

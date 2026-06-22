@@ -1,0 +1,28 @@
+{
+  "name": "SAUTER",
+  "short_name": "SAUTER",
+  "description": "Your second brain — capture notes, links, photos, and let local AI organise them.",
+  "start_url": "/sauter-v1-test/",
+  "scope": "/sauter-v1-test/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0c0a07",
+  "theme_color": "#D4922E",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='40' fill='%230c0a07'/><text x='50%' y='58%' dominant-baseline='middle' text-anchor='middle' font-family='Georgia,serif' font-size='120' font-weight='bold' fill='%23D4922E'>S</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "share_target": {
+    "action": "/sauter-v1-test/",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
+}
