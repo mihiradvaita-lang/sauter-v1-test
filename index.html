@@ -1191,6 +1191,7 @@ kbd {
 }
 .d-nav-btn:hover:not(:disabled) { color: var(--t1); background: var(--s-border); }
 .d-nav-btn:disabled { opacity: 0.22; cursor: default; }
+.d-wordcount { font-size: 10px; color: var(--t4); letter-spacing: 0.04em; }
 .detail-date-txt { font-size: 12px; color: var(--t3); }
 
 .detail-read-bar { height: 2px; background: var(--s-border); flex-shrink: 0; }
@@ -2109,6 +2110,7 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
         <div style="display:flex;align-items:center;gap:12px;">
           <div class="detail-badge" id="d-badge"></div>
           <span class="detail-date-txt" id="d-date"></span>
+          <span class="d-wordcount" id="d-wordcount" title="Word count"></span>
           <button class="focus-toggle-btn" id="focus-toggle-btn" title="Focus mode (F)">⛶</button>
         </div>
       </div>
@@ -2195,7 +2197,8 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
       <div class="vi-key-hints">
         <span><kbd>J</kbd><kbd>K</kbd> navigate</span>
         <span><kbd>/</kbd> search</span>
-        <span><kbd>N</kbd> new note</span>
+        <span><kbd>N</kbd> new</span>
+        <span><kbd>←</kbd><kbd>→</kbd> prev/next in detail</span>
         <span><kbd>Esc</kbd> back</span>
       </div>
     </div>
@@ -3379,6 +3382,13 @@ function openDetail(id) {
   if (imgWrap && imgEl) {
     if (it.image) { imgEl.src = it.image; imgWrap.style.display = 'block'; }
     else          { imgWrap.style.display = 'none'; }
+  }
+
+  // Word count in header
+  const wcEl = document.getElementById('d-wordcount');
+  if (wcEl) {
+    const words = ((it.title || '') + ' ' + (it.body || '')).split(/\s+/).filter(Boolean).length;
+    wcEl.textContent = words > 0 ? words + ' words' : '';
   }
 
   // Update back button label based on vault context
