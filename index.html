@@ -1369,6 +1369,9 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
   white-space: nowrap; box-shadow: 0 4px 24px rgba(0,0,0,0.45);
 }
 .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast-success { border-color: rgba(76,175,118,0.3); color: #5acc8a; }
+.toast-warn    { border-color: rgba(200,120,60,0.3); color: #d4924e; }
+.toast-error   { border-color: rgba(200,60,60,0.3);  color: #e05555; }
 
 /* ===== MAIN SCREEN BOTTOM BAR ===== */
 .main-bottom-bar {
@@ -2179,7 +2182,7 @@ function openVaultInterior(cat) {
           S.items.splice(idx, 1);
           store();
           openVaultInterior(S.openVault); // re-render
-          showToast('Deleted');
+          showToast('Deleted', 'warn');
         }
       });
       list.appendChild(card);
@@ -2435,7 +2438,7 @@ async function pickVault(cat) {
       renderCatFilters();
       renderVaultGrid();
       renderRecentItems();
-      showToast('Moved to ' + cat + ' ✓');
+      showToast('Moved to ' + cat + ' ✓', 'success');
       openDetail(it.id); // refresh badge
     }
     return;
@@ -2514,7 +2517,7 @@ async function _finishSave() {
     S.editId = null;
     store();
     renderCatFilters(); renderList(); renderVaultGrid(); renderRecentItems();
-    showToast('Note updated ✓');
+    showToast('Note updated ✓', 'success');
     if (S.vaultContext) openVaultInterior(S.vaultContext);
     else openDetail(eid);
     return;
@@ -2524,7 +2527,7 @@ async function _finishSave() {
     id: uid(), title, body, category, type,
     ...(url   ? { url }   : {}),
     ...(image ? { image } : {}),
-    createdAt: new Date().toISOString(),
+    createdAt: Date.now(),
   };
   S.items.unshift(item);
   store();
@@ -2533,7 +2536,7 @@ async function _finishSave() {
   renderList();
   renderVaultGrid();
   renderRecentItems();
-  showToast('Saved to ' + category + ' ✓');
+  showToast('Saved to ' + category + ' ✓', 'success');
   if (S.vaultContext) {
     openVaultInterior(S.vaultContext);
   } else {
@@ -2588,7 +2591,7 @@ function deleteActive() {
   S.items = S.items.filter(i => i.id !== S.activeId);
   store(); S.activeId = null; S.delPending = false;
   renderCatFilters(); renderList(); renderVaultGrid(); renderRecentItems();
-  showToast('Note deleted');
+  showToast('Note deleted', 'warn');
   if (S.vaultContext) openVaultInterior(S.vaultContext);
   else gotoView('empty');
 }
@@ -2609,13 +2612,14 @@ function renderMarkdown(text) {
 
 /* ---------- TOAST ---------- */
 let _toastTimer = null;
-function showToast(msg) {
+function showToast(msg, type) {
   const el = document.getElementById('toast');
   if (!el) return;
   el.textContent = msg;
+  el.className = 'toast' + (type ? ' toast-' + type : '');
   el.classList.add('show');
   if (_toastTimer) clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => { el.classList.remove('show'); _toastTimer = null; }, 2500);
+  _toastTimer = setTimeout(() => { el.classList.remove('show'); _toastTimer = null; }, 2200);
 }
 
 /* ---------- RECENT ITEMS (main screen) ---------- */
@@ -3084,7 +3088,7 @@ function wire() {
         summaryEl.style.display = 'none';
       });
     } catch(e) {
-      showToast('AI summary failed');
+      showToast('AI summary failed', 'error');
     }
     btn.classList.remove('thinking');
   });
