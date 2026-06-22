@@ -1329,6 +1329,13 @@ kbd {
   flex-shrink: 0;
 }
 .move-vault-btn:hover { color: var(--gold); border-color: rgba(212,146,46,0.32); }
+.dup-note-btn {
+  padding: 7px 12px;
+  background: transparent; border: 1px solid var(--s-border);
+  border-radius: 8px; font-size: 13px; color: var(--t3);
+  transition: all 200ms var(--eo); flex-shrink: 0;
+}
+.dup-note-btn:hover { color: var(--t2); border-color: var(--s-border2); }
 
 /* ===== CHAT VIEW ===== */
 #v-chat { display: flex; flex-direction: column; background: var(--page); }
@@ -1923,6 +1930,7 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
           <button class="edit-note-btn" id="edit-btn">✏ Edit</button>
           <button class="move-vault-btn" id="move-vault-btn">⤲ Move</button>
           <button class="copy-note-btn" id="copy-note-btn" title="Copy to clipboard">⎘</button>
+          <button class="dup-note-btn" id="dup-note-btn" title="Duplicate note">⧉</button>
         </div>
         <div class="del-wrap">
           <div class="del-confirm-wrap" id="del-confirm">
@@ -4082,6 +4090,29 @@ function wire() {
     } catch (err) {
       showToast('Copy failed — try Ctrl+A, Ctrl+C', 'warn');
     }
+  });
+
+  /* --- Duplicate note button --- */
+  document.getElementById('dup-note-btn').addEventListener('click', () => {
+    const it = S.items.find(i => i.id === S.activeId);
+    if (!it) return;
+    const now = Date.now();
+    const copy = {
+      id: 'n' + now,
+      title: (it.title || 'Untitled') + ' (copy)',
+      body: it.body || '',
+      category: it.category,
+      type: it.type,
+      createdAt: now,
+      pinned: false,
+      ...(it.url ? { url: it.url } : {}),
+      ...(it.image ? { image: it.image } : {}),
+    };
+    S.items.unshift(copy);
+    store();
+    renderCatFilters(); renderList(); renderRecentItems(); renderVaultGrid();
+    openDetail(copy.id);
+    showToast('Note duplicated', 'success');
   });
 
   /* --- Move vault button --- */
