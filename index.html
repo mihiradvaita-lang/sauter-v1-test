@@ -357,12 +357,14 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
 .vault-tile:hover {
   background: var(--s-card2);
   border-color: rgba(212,146,46,0.30);
+  scale: 1.07;
   box-shadow:
     0 0 0 1px rgba(212,146,46,0.26),
     0 10px 36px rgba(0,0,0,0.60),
     0 0  70px rgba(212,146,46,0.38),
     0 0 140px rgba(212,146,46,0.16);
 }
+.vault-tile { transition: background 220ms var(--eo), border-color 220ms var(--eo), box-shadow 220ms var(--eo), scale 220ms var(--eo); }
 
 /* Size variants — slightly larger for busier vaults */
 .vault-tile[data-size="0"] { padding: 11px 9px; }
@@ -398,6 +400,147 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
   font-size: 9px;
   color: var(--t4);
 }
+
+/* "+ New Vault" tile */
+.vault-tile.new-vault-tile {
+  border: 1.5px dashed var(--s-border2);
+  background: transparent;
+  box-shadow: none;
+  opacity: 0.6;
+  transition: opacity 220ms var(--eo), border-color 220ms var(--eo), scale 220ms var(--eo);
+}
+.vault-tile.new-vault-tile.floating { animation: vault-float var(--float-dur, 3.5s) ease-in-out var(--float-phase, 0s) infinite; opacity: 0.6; }
+.vault-tile.new-vault-tile:hover {
+  opacity: 1; border-color: var(--gold); scale: 1.07;
+  box-shadow: 0 0 30px var(--gold-dim);
+}
+.vault-tile.new-vault-tile .vault-tile-icon { background: transparent; border: 1.5px dashed var(--t4); color: var(--t4); font-size: 16px; }
+.vault-tile.new-vault-tile:hover .vault-tile-icon { border-color: var(--gold); color: var(--gold); }
+
+/* Delete badge on custom vault tiles */
+.vault-tile-delete {
+  position: absolute; top: -6px; right: -6px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(0,0,0,0.8); border: 1px solid var(--s-border2);
+  color: var(--t3); font-size: 10px; line-height: 17px;
+  text-align: center; cursor: pointer; z-index: 2;
+  opacity: 0; transition: opacity 160ms, background 160ms;
+  pointer-events: auto;
+}
+.vault-tile:hover .vault-tile-delete { opacity: 1; }
+.vault-tile-delete:hover { background: rgba(196,91,91,0.85); color: #fff; }
+
+/* ===== VIEW: VAULT INTERIOR ===== */
+#v-vault { display: flex; flex-direction: column; }
+
+.vault-interior-bar {
+  padding: 14px 40px;
+  border-bottom: 1px solid var(--s-border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.vault-interior-title {
+  font-size: 15px; font-weight: 600; color: var(--t1);
+  display: flex; align-items: center; gap: 8px;
+}
+.vault-interior-count {
+  font-size: 11px; color: var(--t4); font-weight: 400;
+}
+.vault-interior-list {
+  flex: 1; overflow-y: auto; padding: 16px 40px;
+}
+.vault-interior-list::-webkit-scrollbar { width: 3px; }
+.vault-interior-list::-webkit-scrollbar-thumb { background: var(--t4); border-radius: 2px; }
+
+.vi-card {
+  display: flex; align-items: center; gap: 14px;
+  padding: 13px 16px; margin-bottom: 6px;
+  background: var(--s-s1); border: 1px solid var(--s-border);
+  border-radius: 12px; cursor: pointer;
+  transition: all 180ms var(--eo);
+  opacity: 0; transform: translateY(8px);
+  animation: card-in 320ms var(--eo) forwards;
+}
+.vi-card:hover { background: var(--s-card); border-color: var(--s-border2); transform: translateY(-1px); }
+.vi-type-badge { font-size: 16px; flex-shrink: 0; }
+.vi-card-body { flex: 1; min-width: 0; }
+.vi-card-title {
+  font-size: 13px; font-weight: 500; color: var(--t1);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.vi-card-meta {
+  font-size: 11px; color: var(--t4); margin-top: 3px;
+  display: flex; align-items: center; gap: 8px;
+}
+.vi-card-cat {
+  font-size: 9px; padding: 2px 7px; border-radius: 20px; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase;
+}
+.vault-empty-state {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 10px;
+  color: var(--t4); font-size: 13px;
+}
+.vault-empty-state span:first-child { font-size: 28px; opacity: 0.4; }
+.vault-fab {
+  position: absolute; bottom: 28px; right: 40px;
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--gold); border: none;
+  color: var(--page); font-size: 22px; font-weight: 300;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 20px rgba(212,146,46,0.35);
+  transition: all 200ms var(--eo); z-index: 5;
+}
+.vault-fab:hover { background: var(--gold2); transform: translateY(-2px) scale(1.06); }
+
+/* ===== VAULT CREATE MODAL ===== */
+.vault-create-overlay {
+  position: fixed; inset: 0; z-index: 600;
+  background: rgba(6,4,2,0.72); backdrop-filter: blur(6px);
+  display: none; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 220ms var(--eo);
+}
+.vault-create-overlay.open { display: flex; }
+.vault-create-overlay.visible { opacity: 1; }
+.vault-create-sheet {
+  width: 340px; background: var(--s-card2);
+  border: 1px solid var(--s-border2); border-radius: 16px;
+  padding: 24px 22px 20px;
+  transform: translateY(16px) scale(0.97);
+  transition: transform 270ms var(--eo);
+}
+.vault-create-overlay.visible .vault-create-sheet { transform: translateY(0) scale(1); }
+.vault-create-sheet h3 {
+  font-size: 15px; font-weight: 600; color: var(--t1); margin-bottom: 6px;
+}
+.vault-create-sheet p {
+  font-size: 11px; color: var(--t4); margin-bottom: 16px;
+}
+#vc-name-input {
+  width: 100%; background: var(--s-s1);
+  border: 1px solid var(--s-border); border-radius: 9px;
+  padding: 10px 13px; font-size: 14px; color: var(--t1);
+  outline: none; margin-bottom: 14px;
+  transition: border-color 200ms var(--eo);
+}
+#vc-name-input:focus { border-color: rgba(212,146,46,0.4); }
+#vc-name-input::placeholder { color: var(--t4); }
+.vc-buttons { display: flex; gap: 8px; }
+#vc-create-btn {
+  flex: 1; padding: 9px;
+  background: var(--gold); border: none; border-radius: 9px;
+  color: var(--page); font-size: 13px; font-weight: 600;
+  transition: background 180ms var(--eo);
+}
+#vc-create-btn:hover { background: var(--gold2); }
+#vc-create-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+#vc-cancel-btn {
+  padding: 9px 16px;
+  background: transparent; border: 1px solid var(--s-border);
+  border-radius: 9px; font-size: 13px; color: var(--t3);
+  transition: color 180ms var(--eo);
+}
+#vc-cancel-btn:hover { color: var(--t2); }
 
 /* ===== VIEW: IDLE ===== */
 #v-idle { align-items: center; justify-content: center; gap: 10px; }
@@ -1163,6 +1306,21 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
       </div>
     </div>
 
+    <!-- VAULT INTERIOR -->
+    <div class="view" id="v-vault">
+      <div class="vault-interior-bar">
+        <button class="back-btn" id="vault-back">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+            <path d="M8 2.5L4 6.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          All Vaults
+        </button>
+        <div class="vault-interior-title" id="vi-title"></div>
+      </div>
+      <div class="vault-interior-list" id="vi-list"></div>
+      <button class="vault-fab" id="vault-fab" title="Add new item">+</button>
+    </div>
+
     <!-- CHAT ASSISTANT -->
     <div class="view" id="v-chat">
       <div class="chat-bar">
@@ -1215,12 +1373,26 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
   </div>
 </div>
 
+<!-- VAULT CREATE MODAL -->
+<div class="vault-create-overlay" id="vault-create-overlay">
+  <div class="vault-create-sheet">
+    <h3>Create New Vault</h3>
+    <p>Start with an emoji for an icon, e.g. "🎵 Music"</p>
+    <input id="vc-name-input" type="text" placeholder="e.g. 🎵 Music" autocomplete="off" spellcheck="false" maxlength="30">
+    <div class="vc-buttons">
+      <button id="vc-cancel-btn">Cancel</button>
+      <button id="vc-create-btn" disabled>Create</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ===========================
    SAUTER v1
    =========================== */
 
 const STORE_KEY    = 'sauter_items';
+const CV_KEY       = 'sauter_custom_vaults';
 const OLLAMA       = 'http://localhost:11434';
 const OLLAMA_MODEL = 'qwen2.5:0.5b';          // smallest Qwen — local categorisation + chat
 const MODEL_CHAIN  = [OLLAMA_MODEL, 'qwen2.5', 'qwen2', 'qwen', 'llama3.2', 'phi3'];
@@ -1242,12 +1414,20 @@ let S = {
   aiOnline: false, aiThinking: false,
   delPending: false, helpOpen: false,
   composeAttachments: [],
+  customVaults: [],
+  openVault: null,
+  vaultContext: null,
 };
 
 /* ---------- STORAGE ---------- */
 function load()  { try { return JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); } catch { return []; } }
 function store() { localStorage.setItem(STORE_KEY, JSON.stringify(S.items)); }
 function uid()   { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function loadCustomVaults()  { try { return JSON.parse(localStorage.getItem(CV_KEY) || '[]'); } catch { return []; } }
+function storeCustomVaults() { localStorage.setItem(CV_KEY, JSON.stringify(S.customVaults)); }
+function allVaults() { return [...CATS, ...S.customVaults.map(v => v.name)]; }
+function vaultColor(cat) { return CAT_COLORS[cat] || S.customVaults.find(v => v.name === cat)?.color || '#8A7A60'; }
+function vaultIcon(cat)  { return CAT_ICONS[cat]  || S.customVaults.find(v => v.name === cat)?.icon  || '◎'; }
 
 /* ---------- TIME ---------- */
 function fmt(iso) {
@@ -1272,7 +1452,7 @@ function hl(text, q) {
   return esc(text).replace(new RegExp(`(${safe})`, 'gi'), '<mark>$1</mark>');
 }
 function catStyle(cat) {
-  const c = CAT_COLORS[cat] || CAT_COLORS.Other;
+  const c = vaultColor(cat);
   return `color:${c};background:${c}1a;border:1px solid ${c}44;`;
 }
 
@@ -1297,6 +1477,7 @@ function gotoView(v) {
   if (next) { next.classList.remove('exit'); requestAnimationFrame(() => requestAnimationFrame(() => next.classList.add('active'))); }
   S.view = v;
   if (v === 'empty') Gravity.start(); else Gravity.stop();
+  if (v !== 'vault' && v !== 'detail') S.vaultContext = null;
 }
 
 /* ---------- RENDER VAULT GRID ---------- */
@@ -1305,26 +1486,35 @@ function renderVaultGrid() {
   if (!grid) return;
   grid.innerHTML = '';
 
-  // Scattered positions (% of container) — mirrors Recall free-float layout
-  // Each point is the TOP-LEFT of the tile; chosen to avoid the center hero area
   const TILE_POS = [
-    { left: '6%',  top: '10%' },  // Personal  — top-left
-    { left: '60%', top: '4%'  },  // Work      — top-right
-    { left: '80%', top: '30%' },  // Reading   — right-mid
-    { left: '68%', top: '63%' },  // Ideas     — bottom-right
-    { left: '37%', top: '74%' },  // Goals     — bottom-center
-    { left: '7%',  top: '60%' },  // Health    — left-lower
-    { left: '4%',  top: '33%' },  // Finance   — left-mid
-    { left: '46%', top: '6%'  },  // Other     — top-center
+    { left: '6%',  top: '10%' },
+    { left: '60%', top: '4%'  },
+    { left: '80%', top: '30%' },
+    { left: '68%', top: '63%' },
+    { left: '37%', top: '74%' },
+    { left: '7%',  top: '60%' },
+    { left: '4%',  top: '33%' },
+    { left: '46%', top: '6%'  },
+    { left: '22%', top: '78%' },
+    { left: '88%', top: '55%' },
+    { left: '52%', top: '78%' },
+    { left: '84%', top: '8%'  },
+    { left: '18%', top: '42%' },
+    { left: '30%', top: '5%'  },
+    { left: '55%', top: '45%' },
+    { left: '75%', top: '75%' },
   ];
 
-  const floatDurs    = [3.4, 3.1, 3.7, 2.9, 3.6, 3.2, 4.0, 3.5];
+  const floatDurs    = [3.4, 3.1, 3.7, 2.9, 3.6, 3.2, 4.0, 3.5, 3.3, 3.8];
   const emptyPattern = [2, 1, 2, 0, 1, 0, 1, 1];
 
-  CATS.forEach((cat, i) => {
+  const allCats = allVaults();
+
+  allCats.forEach((cat, i) => {
     const count = S.items.filter(it => it.category === cat).length;
-    const color = CAT_COLORS[cat];
-    const icon  = CAT_ICONS[cat];
+    const color = vaultColor(cat);
+    const icon  = vaultIcon(cat);
+    const isCustom = !CATS.includes(cat);
 
     const size = count === 0 ? emptyPattern[i % emptyPattern.length]
                : count <= 2  ? 1
@@ -1335,7 +1525,6 @@ function renderVaultGrid() {
     tile.className = 'vault-tile';
     tile.dataset.size = size;
 
-    // Scatter position
     const pos = TILE_POS[i % TILE_POS.length];
     tile.style.left = pos.left;
     tile.style.top  = pos.top;
@@ -1345,13 +1534,18 @@ function renderVaultGrid() {
     tile.style.setProperty('--float-phase', '-' + (i * 0.62).toFixed(2) + 's');
 
     tile.innerHTML = `
+      ${isCustom ? '<button class="vault-tile-delete" title="Delete vault">×</button>' : ''}
       <div class="vault-tile-icon" style="background:${color}18;color:${color};">${icon}</div>
       <div class="vault-tile-name">${esc(cat)}</div>
       <div class="vault-tile-count">${count > 0 ? count + (count===1?' note':' notes') : '—'}</div>
     `;
 
-    // Click → ripple on canvas + open compose
-    tile.addEventListener('click', () => {
+    tile.addEventListener('click', (e) => {
+      if (e.target.closest('.vault-tile-delete')) {
+        e.stopPropagation();
+        deleteCustomVault(cat);
+        return;
+      }
       const cv = document.getElementById('gravity-canvas');
       if (cv) {
         const r  = cv.getBoundingClientRect();
@@ -1361,37 +1555,137 @@ function renderVaultGrid() {
           (tr.top  + tr.height / 2) - r.top
         );
       }
-      openCompose();
-      S.selCat = cat; // pre-select vault so Save goes direct
-      updateSaveBtn();
+      openVaultInterior(cat);
     });
 
     grid.appendChild(tile);
   });
 
-  // After card-in: switch to float + register tile centres with Gravity for dot glow
-  CATS.forEach((_, i) => {
+  // "+ New Vault" tile
+  const nvIdx = allCats.length;
+  const nvTile = document.createElement('div');
+  nvTile.className = 'vault-tile new-vault-tile';
+  nvTile.dataset.size = 0;
+  const nvPos = TILE_POS[nvIdx % TILE_POS.length];
+  nvTile.style.left = nvPos.left;
+  nvTile.style.top  = nvPos.top;
+  nvTile.style.animationDelay = (nvIdx * 60) + 'ms';
+  nvTile.style.setProperty('--float-dur', '3.9s');
+  nvTile.style.setProperty('--float-phase', '-' + (nvIdx * 0.62).toFixed(2) + 's');
+  nvTile.innerHTML = `
+    <div class="vault-tile-icon">+</div>
+    <div class="vault-tile-name">New Vault</div>
+    <div class="vault-tile-count">&nbsp;</div>
+  `;
+  nvTile.addEventListener('click', () => showVaultCreate());
+  grid.appendChild(nvTile);
+
+  const totalTiles = allCats.length + 1;
+  for (let i = 0; i < totalTiles; i++) {
     setTimeout(() => {
       const tiles = grid.querySelectorAll('.vault-tile');
       if (tiles[i]) {
-        tiles[i].style.opacity = '1';
+        tiles[i].style.opacity = tiles[i].classList.contains('new-vault-tile') ? '0.6' : '1';
         tiles[i].classList.add('floating');
       }
     }, i * 60 + 440);
-  });
+  }
 
-  // Give tiles time to paint then hand their centres to Gravity
   setTimeout(() => {
     const cv = document.getElementById('gravity-canvas');
     if (!cv) return;
     const cr = cv.getBoundingClientRect();
-    const glows = [...grid.querySelectorAll('.vault-tile')].map(t => {
+    const glows = [...grid.querySelectorAll('.vault-tile:not(.new-vault-tile)')].map(t => {
       const tr = t.getBoundingClientRect();
       return { x: (tr.left + tr.width / 2) - cr.left,
                y: (tr.top + tr.height / 2) - cr.top };
     });
     Gravity.setTileGlows(glows);
   }, 600);
+}
+
+/* ---------- VAULT INTERIOR ---------- */
+function openVaultInterior(cat) {
+  S.openVault = cat;
+  S.vaultContext = cat;
+  const color = vaultColor(cat);
+  const icon  = vaultIcon(cat);
+  const items = S.items.filter(it => it.category === cat);
+
+  document.getElementById('vi-title').innerHTML =
+    `<span style="font-size:18px">${icon}</span> ${esc(cat)} <span class="vault-interior-count">${items.length} item${items.length !== 1 ? 's' : ''}</span>`;
+
+  const list = document.getElementById('vi-list');
+  list.innerHTML = '';
+
+  if (!items.length) {
+    list.innerHTML = `<div class="vault-empty-state"><span>${icon}</span><div>This vault is empty — tap + to add your first item</div></div>`;
+  } else {
+    items.forEach((it, i) => {
+      const badge = it.type === 'link' ? '🔗' : it.type === 'photo' ? '🖼' : '📝';
+      const card = document.createElement('div');
+      card.className = 'vi-card';
+      card.style.animationDelay = (i * 40) + 'ms';
+      card.innerHTML = `
+        <span class="vi-type-badge">${badge}</span>
+        <div class="vi-card-body">
+          <div class="vi-card-title">${esc(it.title || 'Untitled')}</div>
+          <div class="vi-card-meta">
+            <span class="vi-card-cat" style="${catStyle(it.category)}">${esc(it.category)}</span>
+            <span>${fmt(it.createdAt)}</span>
+          </div>
+        </div>
+      `;
+      card.addEventListener('click', () => openDetail(it.id));
+      list.appendChild(card);
+    });
+  }
+
+  gotoView('vault');
+}
+
+/* ---------- CUSTOM VAULT CREATION ---------- */
+function showVaultCreate() {
+  const overlay = document.getElementById('vault-create-overlay');
+  const inp = document.getElementById('vc-name-input');
+  inp.value = '';
+  document.getElementById('vc-create-btn').disabled = true;
+  overlay.classList.add('open');
+  requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('visible')));
+  setTimeout(() => inp.focus(), 280);
+}
+
+function closeVaultCreate() {
+  const overlay = document.getElementById('vault-create-overlay');
+  overlay.classList.remove('visible');
+  setTimeout(() => overlay.classList.remove('open'), 270);
+}
+
+function createCustomVault(rawName) {
+  const name = rawName.trim();
+  if (!name || allVaults().includes(name)) return;
+
+  const emojiMatch = name.match(/^(\p{Emoji_Presentation}|\p{Emoji}️?)/u);
+  const icon = emojiMatch ? emojiMatch[0] : '◎';
+  const palette = ['#D4922E','#5B9BB4','#8B7EC8','#4CAF76','#C4855A','#5AAA8C','#C45B5B','#C48ABB','#7AAEC4','#A4C45B'];
+  const color = palette[(S.customVaults.length) % palette.length];
+
+  S.customVaults.push({ name, icon, color });
+  storeCustomVaults();
+  renderVaultGrid();
+}
+
+function deleteCustomVault(name) {
+  const items = S.items.filter(it => it.category === name);
+  if (items.length > 0) {
+    items.forEach(it => { it.category = 'Other'; });
+    store();
+  }
+  S.customVaults = S.customVaults.filter(v => v.name !== name);
+  storeCustomVaults();
+  renderCatFilters();
+  renderList();
+  renderVaultGrid();
 }
 
 /* ---------- RENDER SIDEBAR LIST ---------- */
@@ -1465,12 +1759,12 @@ function renderCatBtns() {
   row.classList.toggle('show', !S.aiOnline);
 
   if (!S.aiOnline) {
-    CATS.forEach(cat => {
+    allVaults().forEach(cat => {
       const b = document.createElement('button');
       b.className = 'cat-sel-btn' + (S.selCat === cat ? ' selected' : '');
       b.textContent = cat;
       if (S.selCat === cat) {
-        const c = CAT_COLORS[cat];
+        const c = vaultColor(cat);
         b.style.cssText = `color:${c};border-color:${c}60;background:${c}18;`;
       }
       b.addEventListener('click', () => { S.selCat = cat; renderCatBtns(); updateSaveBtn(); });
@@ -1525,9 +1819,9 @@ function showVaultPicker(mode) {
   aiBtn.style.display = (S.aiOnline && _vpMode === 'save') ? 'flex' : 'none';
 
   grid.innerHTML = '';
-  CATS.forEach(cat => {
-    const color  = CAT_COLORS[cat];
-    const icon   = CAT_ICONS[cat];
+  allVaults().forEach(cat => {
+    const color  = vaultColor(cat);
+    const icon   = vaultIcon(cat);
     const tile   = document.createElement('button');
     tile.className = 'vp-tile';
     if (_vpMode === 'move') {
@@ -1629,7 +1923,11 @@ async function _finishSave() {
 
   renderCatFilters();
   renderVaultGrid();
-  openDetail(item.id);
+  if (S.vaultContext) {
+    openVaultInterior(S.vaultContext);
+  } else {
+    openDetail(item.id);
+  }
 }
 
 /* ---------- OPEN DETAIL ---------- */
@@ -1679,34 +1977,23 @@ function deleteActive() {
   S.items = S.items.filter(i => i.id !== S.activeId);
   store(); S.activeId = null; S.delPending = false;
   renderCatFilters(); renderList(); renderVaultGrid();
-  gotoView('empty');
+  if (S.vaultContext) openVaultInterior(S.vaultContext);
+  else gotoView('empty');
 }
 
 /* ===========================
    OLLAMA / AI
    =========================== */
 async function checkOllama() {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 3000);
   try {
-    const r = await fetch(OLLAMA + '/api/tags', { signal: ctrl.signal });
-    clearTimeout(timer);
-    S.aiOnline = r.ok;
+    const ctrl = new AbortController();
+    setTimeout(() => ctrl.abort(), 2000);
+    await fetch(OLLAMA + '/api/tags', { mode: 'no-cors', signal: ctrl.signal });
+    S.aiOnline = true;
+    S._aiCorsBlocked = false;
   } catch {
-    clearTimeout(timer);
-    // Probe with no-cors to distinguish "server down" from "CORS blocked"
-    const ctrl2 = new AbortController();
-    const t2 = setTimeout(() => ctrl2.abort(), 2000);
-    try {
-      await fetch(OLLAMA + '/api/tags', { mode: 'no-cors', signal: ctrl2.signal });
-      clearTimeout(t2);
-      S.aiOnline = false;
-      S._aiCorsBlocked = true;
-    } catch {
-      clearTimeout(t2);
-      S.aiOnline = false;
-      S._aiCorsBlocked = false;
-    }
+    S.aiOnline = false;
+    S._aiCorsBlocked = false;
   }
   updateOllamaUI();
 }
@@ -1740,7 +2027,7 @@ async function aiAutoCategorize(title, content) {
   const text = [title, content].filter(Boolean).join(' ').slice(0, 600);
   const prompt =
     `You are a personal note categoriser. Choose exactly ONE category for the content below.\n` +
-    `Categories: ${CATS.join(', ')}\n\n` +
+    `Categories: ${allVaults().join(', ')}\n\n` +
     `Content: "${text}"\n\n` +
     `Reply with ONLY the category name — nothing else.`;
 
@@ -1755,7 +2042,7 @@ async function aiAutoCategorize(title, content) {
       if (!r.ok) continue;
       const d   = await r.json();
       const raw = (d.response || '').trim();
-      const cat = CATS.find(c => raw.toLowerCase().includes(c.toLowerCase()));
+      const cat = allVaults().find(c => raw.toLowerCase().includes(c.toLowerCase()));
       if (cat) return cat;
     } catch { continue; }
   }
@@ -1833,9 +2120,15 @@ document.addEventListener('keydown', e => {
       document.getElementById('del-btn').style.display = '';
       return;
     }
+    if (S.view === 'vault') {
+      S.openVault = null; S.vaultContext = null;
+      gotoView('empty');
+      return;
+    }
     if (S.view === 'compose' || S.view === 'detail') {
       S.activeId = null; renderList();
-      gotoView('empty');
+      if (S.vaultContext) openVaultInterior(S.vaultContext);
+      else gotoView('empty');
     }
   }
 });
@@ -1909,11 +2202,25 @@ function wire() {
 
   document.getElementById('compose-back').addEventListener('click', () => {
     S.activeId = null; renderList();
-    gotoView('empty');
+    if (S.vaultContext) { openVaultInterior(S.vaultContext); }
+    else { gotoView('empty'); }
   });
   document.getElementById('detail-back').addEventListener('click', () => {
     S.activeId = null; renderList();
+    if (S.vaultContext) { openVaultInterior(S.vaultContext); }
+    else { gotoView('empty'); }
+  });
+
+  /* --- Vault interior --- */
+  document.getElementById('vault-back').addEventListener('click', () => {
+    S.openVault = null; S.vaultContext = null;
     gotoView('empty');
+  });
+  document.getElementById('vault-fab').addEventListener('click', () => {
+    openCompose();
+    S.selCat = S.openVault;
+    S.vaultContext = S.openVault;
+    updateSaveBtn();
   });
 
   document.getElementById('save-btn').addEventListener('click', saveNote);
@@ -2145,6 +2452,38 @@ function wire() {
   document.getElementById('vault-picker-overlay').addEventListener('click', e => {
     if (e.target.id === 'vault-picker-overlay') closeVaultPicker();
   });
+
+  /* --- Vault create modal --- */
+  const vcInput = document.getElementById('vc-name-input');
+  const vcCreateBtn = document.getElementById('vc-create-btn');
+  vcInput.addEventListener('input', () => {
+    vcCreateBtn.disabled = !vcInput.value.trim();
+  });
+  vcCreateBtn.addEventListener('click', () => {
+    createCustomVault(vcInput.value);
+    closeVaultCreate();
+  });
+  vcInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && vcInput.value.trim()) {
+      createCustomVault(vcInput.value);
+      closeVaultCreate();
+    }
+  });
+  document.getElementById('vc-cancel-btn').addEventListener('click', closeVaultCreate);
+  document.getElementById('vault-create-overlay').addEventListener('click', e => {
+    if (e.target.id === 'vault-create-overlay') closeVaultCreate();
+  });
+
+  /* --- Document-level paste: forward clipboard images to dropzone when in compose view --- */
+  document.addEventListener('paste', e => {
+    if (S.view !== 'compose') return;
+    const items = [...(e.clipboardData || {}).items || []];
+    const imgItem = items.find(it => it.type.startsWith('image/'));
+    if (imgItem) {
+      e.preventDefault();
+      processDropFile(imgItem.getAsFile());
+    }
+  });
 }
 
 /* ===========================
@@ -2320,6 +2659,7 @@ const Gravity = (() => {
    =========================== */
 function init() {
   S.items = load();
+  S.customVaults = loadCustomVaults();
   wire();
   renderCatFilters();
   renderList();
