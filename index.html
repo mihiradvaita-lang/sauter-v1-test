@@ -396,6 +396,12 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
   font-weight: 500;
 }
 
+.vault-tile-preview {
+  font-size: 9px; color: var(--t4);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  max-width: 90px; line-height: 1.3;
+  opacity: 0.7;
+}
 .vault-tile-count {
   font-size: 9px;
   color: var(--t4);
@@ -1884,11 +1890,18 @@ function renderVaultGrid() {
     tile.style.setProperty('--float-phase', '-' + (i * 0.62).toFixed(2) + 's');
     tile.style.setProperty('--va', hexToRgb(color));
 
+    // Get the most recent note title for preview
+    const recentItem = S.items
+      .filter(it => it.category === cat)
+      .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0];
+    const previewText = recentItem ? (recentItem.title || '').slice(0, 20) : '';
+
     tile.innerHTML = `
       ${isCustom ? '<button class="vault-tile-delete" title="Delete vault">×</button>' : ''}
-      <div class="vault-tile-icon" style="background:${color}18;color:${color};">${icon}</div>
+      <div class="vault-tile-icon" style="background:${color}18;color:${color};box-shadow:0 0 14px ${color}26;">${icon}</div>
       <div class="vault-tile-name">${esc(cat)}</div>
-      <div class="vault-tile-count">${count > 0 ? `<span class="vault-tile-count-pill">${count}</span>` : ''}</div>
+      ${previewText ? `<div class="vault-tile-preview">${esc(previewText)}</div>` : ''}
+      <div class="vault-tile-count">${count > 0 ? `<span class="vault-tile-count-pill" style="background:${color}22;color:${color};">${count}</span>` : ''}</div>
     `;
 
     tile.addEventListener('click', (e) => {
