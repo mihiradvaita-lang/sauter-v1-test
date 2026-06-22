@@ -986,6 +986,7 @@ kbd {
   flex-shrink: 0;
 }
 .d-saved { font-size: 11px; color: var(--t4); }
+.d-readtime { font-size: 10px; color: var(--t4); background: var(--s-s1); border: 1px solid var(--s-border); border-radius: 8px; padding: 2px 7px; margin-left: 6px; }
 .del-wrap { display: flex; align-items: center; gap: 8px; }
 
 #del-btn {
@@ -1714,6 +1715,12 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
         <button class="fmt-btn" data-fmt="link" title="Insert link">&#128279;</button>
         <button class="fmt-btn" data-fmt="h1" title="Heading 1" style="font-size:11px">H1</button>
         <button class="fmt-btn" data-fmt="h2" title="Heading 2" style="font-size:10px">H2</button>
+        <div class="fmt-sep"></div>
+        <button class="fmt-btn" data-fmt="ul" title="Bullet list">&#8226;&#8212;</button>
+        <button class="fmt-btn" data-fmt="ol" title="Numbered list">1.</button>
+        <button class="fmt-btn" data-fmt="quote" title="Blockquote">"</button>
+        <button class="fmt-btn" data-fmt="task" title="Task item">&#9744;</button>
+        <button class="fmt-btn" data-fmt="hr" title="Horizontal rule">&#9135;</button>
       </div>
       <textarea id="body-input" placeholder="Start writing…" spellcheck="true"></textarea>
 
@@ -1773,6 +1780,7 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
 
       <div class="detail-foot">
         <span class="d-saved" id="d-saved"></span>
+        <span class="d-readtime" id="d-readtime"></span>
         <div style="display:flex;align-items:center;gap:8px;">
           <button class="edit-note-btn" id="edit-btn">✏ Edit</button>
           <button class="move-vault-btn" id="move-vault-btn">⤲ Move</button>
@@ -2661,6 +2669,13 @@ function openDetail(id) {
   document.getElementById('d-title').textContent   = it.title || 'Untitled';
   document.getElementById('d-body').innerHTML      = renderMarkdown(it.body || '');
   document.getElementById('d-saved').textContent   = 'Saved ' + fmtLong(it.createdAt);
+  const rtEl = document.getElementById('d-readtime');
+  if (rtEl) {
+    const wCount = ((it.title || '') + ' ' + (it.body || '')).split(/\s+/).filter(Boolean).length;
+    const mins = Math.max(1, Math.round(wCount / 200));
+    rtEl.textContent = wCount > 10 ? `${mins} min read · ${wCount} words` : '';
+    rtEl.style.display = wCount > 10 ? '' : 'none';
+  }
 
   // Link bar
   const linkBar = document.getElementById('d-link-bar');
@@ -3277,6 +3292,31 @@ function wire() {
         const newLine = already ? stripped : pre + stripped;
         ta.value = ta.value.substring(0, ls) + newLine + ta.value.substring(lineEnd);
         ta.selectionStart = ta.selectionEnd = ls + newLine.length;
+        ta.focus(); updateSaveBtn();
+        return;
+      }
+      case 'ul': case 'ol': case 'quote': case 'task': {
+        // Line-prefix toggles — work on each selected line
+        const prefixMap = { ul: '- ', ol: '1. ', quote: '> ', task: '- [ ] ' };
+        const pfx = prefixMap[fmt];
+        const ls2 = ta.value.lastIndexOf('\n', start - 1) + 1;
+        const le2 = ta.value.indexOf('\n', end);
+        const blockEnd = le2 === -1 ? ta.value.length : le2;
+        const block = ta.value.substring(ls2, blockEnd);
+        const lines2 = block.split('\n');
+        // Toggle: if all already prefixed, strip; otherwise add
+        const allPrefixed = lines2.every(l => l.startsWith(pfx));
+        const newBlock = lines2.map(l => allPrefixed ? l.slice(pfx.length) : pfx + l).join('\n');
+        ta.value = ta.value.substring(0, ls2) + newBlock + ta.value.substring(blockEnd);
+        ta.selectionStart = ls2;
+        ta.selectionEnd = ls2 + newBlock.length;
+        ta.focus(); updateSaveBtn();
+        return;
+      }
+      case 'hr': {
+        const hr = '\n\n---\n\n';
+        ta.value = ta.value.substring(0, start) + hr + ta.value.substring(end);
+        ta.selectionStart = ta.selectionEnd = start + hr.length;
         ta.focus(); updateSaveBtn();
         return;
       }
