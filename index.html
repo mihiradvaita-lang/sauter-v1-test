@@ -618,6 +618,23 @@ kbd {
   background: var(--s-card);
 }
 .vi-card.vi-focused .vi-card-del { opacity: 1; pointer-events: all; }
+.vi-card.vi-focused .vi-card-pin { opacity: 1; pointer-events: all; }
+
+.vi-card-pin {
+  position: absolute; top: 10px; right: 36px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(212,146,46,0.08); border: 1px solid rgba(212,146,46,0.15);
+  color: rgba(212,146,46,0.5); font-size: 9px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  opacity: 0; pointer-events: none;
+  transition: all 140ms var(--eo);
+}
+.vi-card:hover .vi-card-pin { opacity: 0.7; pointer-events: all; }
+.vi-card-pin:hover { opacity: 1 !important; background: rgba(212,146,46,0.18); }
+.vi-card-pinned .vi-card-pin { opacity: 1 !important; pointer-events: all; color: var(--gold); }
+.vi-card-pinned { border-left: 2px solid rgba(212,146,46,0.4); }
+.vi-pin-badge { font-size: 10px; margin-right: 4px; }
 
 .vi-sort-btn {
   width: 28px; height: 28px; border-radius: 50%;
@@ -2170,9 +2187,11 @@ function openVaultInterior(cat) {
     }
     list.appendChild(emptyDiv);
   } else {
-    // Sort by user preference
+    // Sort by user preference — pinned items always float to top
     const sortMode = S._viSort || 'newest';
     const sorted = [...items].sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
       if (sortMode === 'oldest') return (a.createdAt || 0) - (b.createdAt || 0);
       if (sortMode === 'alpha')  return (a.title || '').localeCompare(b.title || '');
       return (b.createdAt || 0) - (a.createdAt || 0); // newest first (default)
@@ -2185,20 +2204,33 @@ function openVaultInterior(cat) {
       card.className = 'vi-card';
       card.style.animationDelay = (i * 40) + 'ms';
       const snippet = (it.body || '').replace(/[#*`_~\[\]]/g, '').slice(0, 80);
+      if (it.pinned) card.classList.add('vi-card-pinned');
       card.innerHTML = `
         <span class="vi-type-pill" style="background:${pillBg};color:${pillColor}">${badge}</span>
         <div class="vi-card-body">
-          <div class="vi-card-title">${esc(it.title || 'Untitled')}</div>
+          <div class="vi-card-title">${it.pinned ? '<span class="vi-pin-badge" title="Pinned">📌</span>' : ''}${esc(it.title || 'Untitled')}</div>
           ${snippet ? `<div class="vi-card-snippet">${esc(snippet)}</div>` : ''}
           <div class="vi-card-meta">
             <span>${fmt(it.createdAt)}</span>
           </div>
         </div>
+        <button class="vi-card-pin" data-id="${esc(it.id)}" title="${it.pinned ? 'Unpin' : 'Pin to top'}" style="color:${it.pinned ? 'var(--gold)' : ''}">📌</button>
         <button class="vi-card-del" data-id="${esc(it.id)}" title="Delete">✕</button>
       `;
       card.addEventListener('click', e => {
-        if (e.target.closest('.vi-card-del')) return; // let delete button handle
+        if (e.target.closest('.vi-card-del') || e.target.closest('.vi-card-pin')) return;
         openDetail(it.id);
+      });
+      card.querySelector('.vi-card-pin').addEventListener('click', e => {
+        e.stopPropagation();
+        const pinId = e.currentTarget.dataset.id;
+        const item = S.items.find(x => x.id === pinId);
+        if (item) {
+          item.pinned = !item.pinned;
+          store();
+          openVaultInterior(S.openVault);
+          showToast(item.pinned ? '📌 Pinned to top' : 'Unpinned', 'success');
+        }
       });
       card.querySelector('.vi-card-del').addEventListener('click', e => {
         e.stopPropagation();
