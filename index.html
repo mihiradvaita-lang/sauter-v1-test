@@ -1201,6 +1201,20 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
   </main>
 </div>
 
+<!-- VAULT PICKER MODAL -->
+<div class="vault-picker-overlay" id="vault-picker-overlay">
+  <div class="vault-picker-sheet">
+    <div class="vp-handle"></div>
+    <div class="vp-title" id="vp-title">Choose a Vault</div>
+    <div class="vp-sub"   id="vp-sub">Where should this be saved?</div>
+    <div class="vp-grid"  id="vp-grid"></div>
+    <div class="vp-footer">
+      <button class="vp-ai-btn"     id="vp-ai-btn">✦ Let AI decide</button>
+      <button class="vp-cancel-btn" id="vp-cancel-btn">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <script>
 /* ===========================
    SAUTER v1
@@ -2342,19 +2356,5 @@ function init() {
 
 init();
 </script>
-
-<!-- VAULT PICKER MODAL -->
-<div class="vault-picker-overlay" id="vault-picker-overlay">
-  <div class="vault-picker-sheet">
-    <div class="vp-handle"></div>
-    <div class="vp-title" id="vp-title">Choose a Vault</div>
-    <div class="vp-sub"   id="vp-sub">Where should this be saved?</div>
-    <div class="vp-grid"  id="vp-grid"></div>
-    <div class="vp-footer">
-      <button class="vp-ai-btn"     id="vp-ai-btn">✦ Let AI decide</button>
-      <button class="vp-cancel-btn" id="vp-cancel-btn">Cancel</button>
-    </div>
-  </div>
-</div>
 </body>
 </html>
