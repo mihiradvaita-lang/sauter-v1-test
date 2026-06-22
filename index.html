@@ -877,6 +877,13 @@ kbd {
 #body-input::-webkit-scrollbar { width: 3px; }
 #body-input::-webkit-scrollbar-thumb { background: var(--t4); border-radius: 2px; }
 
+/* ===== COMPOSE WORD COUNT ===== */
+.compose-wordcount {
+  font-size: 10px; color: var(--t4);
+  transition: color 200ms;
+}
+.compose-wordcount.active { color: var(--t3); }
+
 /* ===== COMPOSE FOOTER ===== */
 .compose-foot {
   border-top: 1px solid var(--s-border);
@@ -1716,8 +1723,9 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
       <input type="file" id="dropzone-file-input" multiple accept="image/*,application/pdf,.pdf,.doc,.docx,.txt,.zip" style="display:none">
 
       <div class="compose-foot">
-        <div class="compose-vault-row">
+        <div class="compose-vault-row" style="display:flex;align-items:center;gap:10px;">
           <button id="compose-vault-btn">📦 Choose Vault</button>
+          <span class="compose-wordcount" id="compose-wordcount"></span>
         </div>
         <button id="save-btn" disabled>Save</button>
       </div>
@@ -2445,6 +2453,8 @@ function openCompose() {
 
   document.getElementById('title-input').value = '';
   document.getElementById('body-input').value  = '';
+  const wcEl2 = document.getElementById('compose-wordcount');
+  if (wcEl2) { wcEl2.textContent = ''; wcEl2.className = 'compose-wordcount'; }
   const btn = document.getElementById('save-btn');
   btn.disabled = true; btn.textContent = 'Save'; btn.classList.remove('saving');
 
@@ -3313,6 +3323,20 @@ function wire() {
       }
     }
   });
+
+  // Word count tracker
+  const bodyInput = document.getElementById('body-input');
+  const wcEl = document.getElementById('compose-wordcount');
+  function updateWordCount() {
+    const text = bodyInput.value.trim();
+    const words = text ? text.split(/\s+/).filter(Boolean).length : 0;
+    const chars = text.length;
+    if (wcEl) {
+      wcEl.textContent = words > 0 ? `${words} word${words !== 1 ? 's' : ''} · ${chars} char${chars !== 1 ? 's' : ''}` : '';
+      wcEl.className = 'compose-wordcount' + (words > 0 ? ' active' : '');
+    }
+  }
+  bodyInput.addEventListener('input', updateWordCount);
 
   // Paste images from clipboard into body textarea
   document.getElementById('body-input').addEventListener('paste', e => {
