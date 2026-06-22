@@ -2581,13 +2581,27 @@ function updateVaultIndicator() {
 }
 
 /* ---------- OPEN COMPOSE ---------- */
-function openCompose() {
+const DRAFT_KEY = 'sauter_draft';
+function saveDraft() {
+  if (S.editId) return; // Don't save drafts for edits
+  const title = document.getElementById('title-input')?.value || '';
+  const body = document.getElementById('body-input')?.value || '';
+  if (title || body) {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({ title, body, savedAt: Date.now() }));
+  } else {
+    localStorage.removeItem(DRAFT_KEY);
+  }
+}
+function clearDraft() { localStorage.removeItem(DRAFT_KEY); }
+
+function openCompose(restoreDraft = false) {
   S.activeId = null; S.selCat = null; S.editId = null;
   S.aiThinking = false; S.delPending = false;
   S.composeAttachments = [];
 
-  document.getElementById('title-input').value = '';
-  document.getElementById('body-input').value  = '';
+  const draft = restoreDraft ? (() => { try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch { return null; } })() : null;
+  document.getElementById('title-input').value = draft?.title || '';
+  document.getElementById('body-input').value  = draft?.body  || '';
   const wcEl2 = document.getElementById('compose-wordcount');
   if (wcEl2) { wcEl2.textContent = ''; wcEl2.className = 'compose-wordcount'; }
   const btn = document.getElementById('save-btn');
@@ -2598,6 +2612,28 @@ function openCompose() {
   if (dzPreviews) dzPreviews.innerHTML = '';
   const dzUrlInp = document.getElementById('dz-url-input');
   if (dzUrlInp) dzUrlInp.value = '';
+
+  // Show draft restore indicator if draft exists
+  const existingDraft = (() => { try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null'); } catch { return null; } })();
+  if (existingDraft && !restoreDraft) {
+    // Non-destructive: show a restore banner
+    const draftAge = Date.now() - (existingDraft.savedAt || 0);
+    if (draftAge < 7 * 86400000) { // only if < 7 days old
+      const restoredTitle = document.getElementById('title-input');
+      const restoredBody = document.getElementById('body-input');
+      if (restoredTitle) restoredTitle.value = existingDraft.title || '';
+      if (restoredBody) restoredBody.value = existingDraft.body || '';
+      const wcEl4 = document.getElementById('compose-wordcount');
+      if (wcEl4) {
+        const wc4 = (existingDraft.body || '').split(/\s+/).filter(Boolean).length;
+        wcEl4.textContent = wc4 > 0 ? `${wc4} words (draft)` : '';
+        wcEl4.className = 'compose-wordcount' + (wc4 > 0 ? ' active' : '');
+      }
+      const btn4 = document.getElementById('save-btn');
+      if (btn4) btn4.disabled = !(existingDraft.title || existingDraft.body);
+      showToast('Draft restored ↩', 'success');
+    }
+  }
 
   updateVaultIndicator();
   renderList();
@@ -2741,6 +2777,7 @@ async function _finishSave() {
     S.editId = null;
     store();
     renderCatFilters(); renderList(); renderVaultGrid(); renderRecentItems();
+    clearDraft();
     showToast('Note updated ✓', 'success');
     if (S.vaultContext) openVaultInterior(S.vaultContext);
     else openDetail(eid);
@@ -2755,6 +2792,7 @@ async function _finishSave() {
   };
   S.items.unshift(item);
   store();
+  clearDraft();
 
   renderCatFilters();
   renderList();
@@ -3037,6 +3075,15 @@ function openEdit(id) {
 
   if (it.url)   addAttachment('link',  it.url,   it.url);
   if (it.image) addAttachment('image', it.image, 'Image');
+
+  // Pre-fill word count for edit mode
+  const bodyVal = (it.body || '').trim();
+  const wc = bodyVal ? bodyVal.split(/\s+/).filter(Boolean).length : 0;
+  const wcEl3 = document.getElementById('compose-wordcount');
+  if (wcEl3) {
+    wcEl3.textContent = wc > 0 ? `${wc} words · ${bodyVal.length} chars` : '';
+    wcEl3.className = 'compose-wordcount' + (wc > 0 ? ' active' : '');
+  }
 
   updateVaultIndicator();
   gotoView('compose');
@@ -3627,7 +3674,8 @@ function wire() {
       wcEl.className = 'compose-wordcount' + (words > 0 ? ' active' : '');
     }
   }
-  bodyInput.addEventListener('input', updateWordCount);
+  bodyInput.addEventListener('input', () => { updateWordCount(); saveDraft(); });
+  document.getElementById('title-input').addEventListener('input', saveDraft);
 
   // Keyboard shortcuts in compose (Ctrl/Cmd + B/I/K/E)
   bodyInput.addEventListener('keydown', e => {
