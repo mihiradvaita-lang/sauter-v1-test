@@ -1568,6 +1568,7 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
 }
 .recent-date { font-size: 10px; color: var(--t4); flex-shrink: 0; }
 .recent-empty { text-align: center; color: var(--t4); font-size: 12px; padding: 10px 0; }
+.recent-snippet { font-size: 10px; color: var(--t4); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
 
 /* ===== DETAIL EDIT BUTTON ===== */
 .edit-note-btn {
@@ -3074,11 +3075,23 @@ function renderRecentItems() {
     const el = document.createElement('div');
     el.className = 'recent-item';
     el.style.animationDelay = (i * 28) + 'ms';
+    // Show snippet of matched body text when searching
+    let bodySnippet = '';
+    if (q && it.body) {
+      const bodyLc = it.body.toLowerCase();
+      const idx = bodyLc.indexOf(q);
+      if (idx !== -1 && !(it.title || '').toLowerCase().includes(q)) {
+        const start = Math.max(0, idx - 15);
+        const raw = it.body.slice(start, idx + q.length + 30).replace(/[\n\r]+/g, ' ');
+        bodySnippet = `<span class="recent-snippet">${(start > 0 ? '…' : '') + hl(raw, q)}</span>`;
+      }
+    }
     el.innerHTML = `
       <span class="recent-type-pill" style="background:${pillBg};color:${pillColor}">${badge}</span>
-      <span class="recent-title-txt">${esc(it.title || 'Untitled')}</span>
+      <span class="recent-title-txt">${hl(it.title || 'Untitled', q)}</span>
+      ${bodySnippet}
       <span class="recent-vault-chip" style="color:${color};background:${color}1a;border:1px solid ${color}44;">${esc(it.category)}</span>
-      <span class="recent-date">${fmt(it.createdAt)}</span>
+      <span class="recent-date">${fmt(it.updatedAt || it.createdAt)}</span>
     `;
     el.addEventListener('click', () => openDetail(it.id));
     list.appendChild(el);
