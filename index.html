@@ -597,6 +597,13 @@ body.focus-mode .focus-toggle-btn { color: var(--gold); border-color: rgba(212,1
   font-size: 9px; padding: 2px 7px; border-radius: 20px; font-weight: 600;
   letter-spacing: 0.06em; text-transform: uppercase;
 }
+.vi-date-group {
+  font-size: 9.5px; font-weight: 600; color: var(--t4);
+  text-transform: uppercase; letter-spacing: 0.1em;
+  padding: 10px 4px 4px; margin-top: 4px;
+  border-top: 1px solid var(--s-border);
+}
+.vi-date-group:first-child { border-top: none; padding-top: 0; margin-top: 0; }
 .vault-empty-state {
   flex: 1; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 12px;
@@ -2500,7 +2507,34 @@ function openVaultInterior(cat) {
       if (sortMode === 'alpha')  return (a.title || '').localeCompare(b.title || '');
       return (b.createdAt || 0) - (a.createdAt || 0); // newest first (default)
     });
+
+    // Add date group headers for newest/oldest sort (not alpha, not when searching)
+    let lastGroup = null;
+    const getGroup = (ts) => {
+      if (!ts) return null;
+      const now = new Date(); now.setHours(0,0,0,0);
+      const d = new Date(ts); d.setHours(0,0,0,0);
+      const diff = Math.round((now - d) / 86400000);
+      if (diff === 0) return 'Today';
+      if (diff === 1) return 'Yesterday';
+      if (diff <= 7) return 'This Week';
+      if (diff <= 30) return 'This Month';
+      return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    };
+
     sorted.forEach((it, i) => {
+      // Insert date group header
+      if (!viQ && (sortMode === 'newest' || sortMode === 'oldest') && !it.pinned) {
+        const group = getGroup(it.createdAt);
+        if (group && group !== lastGroup) {
+          lastGroup = group;
+          const hdr = document.createElement('div');
+          hdr.className = 'vi-date-group';
+          hdr.textContent = group;
+          list.appendChild(hdr);
+        }
+      }
+
       const badge = it.type === 'link' ? '🔗' : it.type === 'photo' ? '🖼' : '📝';
       const pillBg = it.type === 'link' ? 'rgba(91,155,180,0.15)' : it.type === 'photo' ? 'rgba(139,126,200,0.15)' : 'rgba(212,146,46,0.12)';
       const pillColor = it.type === 'link' ? '#5B9BB4' : it.type === 'photo' ? '#8B7EC8' : 'var(--gold)';
