@@ -396,6 +396,9 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
   font-weight: 500;
 }
 
+.vault-tile-pin-dot {
+  font-size: 8px; opacity: 0.6; margin-left: 2px;
+}
 .vault-tile-preview {
   font-size: 9px; color: var(--t4);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -2044,18 +2047,24 @@ function renderVaultGrid() {
       .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))[0];
     const previewText = recentItem ? (recentItem.title || '').slice(0, 20) : '';
 
+    const pinnedCount = S.items.filter(it => it.category === cat && it.pinned).length;
     tile.innerHTML = `
       ${isCustom ? '<button class="vault-tile-delete" title="Delete vault">×</button>' : ''}
       <div class="vault-tile-icon" style="background:${color}18;color:${color};box-shadow:0 0 14px ${color}26;">${icon}</div>
       <div class="vault-tile-name">${esc(cat)}</div>
       ${previewText ? `<div class="vault-tile-preview">${esc(previewText)}</div>` : ''}
-      <div class="vault-tile-count">${count > 0 ? `<span class="vault-tile-count-pill" style="background:${color}22;color:${color};">${count}</span>` : ''}</div>
+      <div class="vault-tile-count">${count > 0 ? `<span class="vault-tile-count-pill" style="background:${color}22;color:${color};">${count}</span>` : ''}${pinnedCount > 0 ? `<span class="vault-tile-pin-dot" title="${pinnedCount} pinned">📌</span>` : ''}</div>
     `;
 
     tile.addEventListener('click', (e) => {
       if (e.target.closest('.vault-tile-delete')) {
         e.stopPropagation();
+        const noteCount = S.items.filter(it => it.category === cat).length;
+        if (noteCount > 0) {
+          if (!confirm(`Delete "${cat}"?\n\n${noteCount} note${noteCount !== 1 ? 's' : ''} will be moved to Other.`)) return;
+        }
         deleteCustomVault(cat);
+        showToast(`"${cat}" deleted`, 'warn');
         return;
       }
       const cv = document.getElementById('gravity-canvas');
