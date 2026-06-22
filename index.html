@@ -399,11 +399,20 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
 .vault-tile-count {
   font-size: 9px;
   color: var(--t4);
+  min-height: 14px;
+}
+.vault-tile-count-pill {
+  display: inline-block;
+  padding: 1px 7px; border-radius: 10px;
+  background: rgba(212,146,46,0.15);
+  color: var(--gold);
+  border: 1px solid rgba(212,146,46,0.25);
+  font-size: 9px; font-weight: 600;
 }
 
 /* "+ New Vault" tile */
 .vault-tile.new-vault-tile {
-  border: 1.5px dashed var(--s-border2);
+  border: 2px dashed rgba(255,255,255,0.2);
   background: transparent;
   box-shadow: none;
   opacity: 0.6;
@@ -431,7 +440,9 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
 .vault-tile-delete:hover { background: rgba(196,91,91,0.85); color: #fff; }
 
 /* ===== VIEW: VAULT INTERIOR ===== */
-#v-vault { display: flex; flex-direction: column; }
+#v-vault { display: flex; flex-direction: column; transform: translateX(30px); }
+#v-vault.active { transform: translateX(0); }
+#v-vault.exit { transform: translateX(-20px); }
 
 .vault-interior-bar {
   padding: 14px 40px;
@@ -448,6 +459,7 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
 }
 .vault-interior-list {
   flex: 1; overflow-y: auto; padding: 16px 40px;
+  display: flex; flex-direction: column;
 }
 .vault-interior-list::-webkit-scrollbar { width: 3px; }
 .vault-interior-list::-webkit-scrollbar-thumb { background: var(--t4); border-radius: 2px; }
@@ -1128,6 +1140,30 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
 /* ===== HIGHLIGHT ===== */
 mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; padding: 0 1px; }
 
+/* ===== SIDEBAR AI STATUS ===== */
+.sb-ai-row {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 0 10px;
+  border-bottom: 1px solid var(--s-border);
+  margin-bottom: 10px;
+}
+.sb-ai-label { font-size: 10px; color: var(--t4); letter-spacing: 0.05em; }
+
+/* ===== COMPOSE VAULT SELECTOR ===== */
+.compose-vault-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 12px;
+}
+#compose-vault-btn {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; padding: 5px 12px;
+  background: var(--s-s1); border: 1px solid var(--s-border);
+  border-radius: 20px; color: var(--t3);
+  transition: all 180ms var(--eo);
+}
+#compose-vault-btn:hover { color: var(--t2); border-color: var(--s-border2); }
+#compose-vault-btn.has-vault { color: var(--gold); border-color: rgba(212,146,46,0.4); background: var(--gold-dim); }
+
 /* ===== RIPPLE ===== */
 .rpl {
   position: fixed; pointer-events: none; z-index: 9999;
@@ -1166,6 +1202,10 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
     </div>
 
     <div class="sb-foot">
+      <div class="sb-ai-row">
+        <div class="status-dot" id="sb-status-dot"></div>
+        <span class="sb-ai-label" id="sb-status-txt">Checking AI…</span>
+      </div>
       <button class="sb-chat-btn" id="chat-btn">
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
           <path d="M1.5 3C1.5 2.17 2.17 1.5 3 1.5h7c.83 0 1.5.67 1.5 1.5v4c0 .83-.67 1.5-1.5 1.5H7.5L5 11v-2.5H3C2.17 8.5 1.5 7.83 1.5 7V3z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
@@ -1254,6 +1294,9 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
       <input type="file" id="dropzone-file-input" multiple accept="image/*,application/pdf,.pdf,.doc,.docx,.txt,.zip" style="display:none">
 
       <div class="compose-foot">
+        <div class="compose-vault-row">
+          <button id="compose-vault-btn">📦 Choose Vault</button>
+        </div>
         <button id="save-btn" disabled>Save</button>
       </div>
     </div>
@@ -1537,7 +1580,7 @@ function renderVaultGrid() {
       ${isCustom ? '<button class="vault-tile-delete" title="Delete vault">×</button>' : ''}
       <div class="vault-tile-icon" style="background:${color}18;color:${color};">${icon}</div>
       <div class="vault-tile-name">${esc(cat)}</div>
-      <div class="vault-tile-count">${count > 0 ? count + (count===1?' note':' notes') : '—'}</div>
+      <div class="vault-tile-count">${count > 0 ? `<span class="vault-tile-count-pill">${count}</span>` : ''}</div>
     `;
 
     tile.addEventListener('click', (e) => {
@@ -1781,6 +1824,26 @@ function updateSaveBtn() {
   document.getElementById('save-btn').disabled = !(t || b || hasAttach);
 }
 
+/* ---------- VAULT INDICATOR ---------- */
+function updateVaultIndicator() {
+  const btn = document.getElementById('compose-vault-btn');
+  if (!btn) return;
+  if (S.selCat) {
+    const ic = vaultIcon(S.selCat), cl = vaultColor(S.selCat);
+    btn.innerHTML = `${ic} ${esc(S.selCat)}`;
+    btn.className = 'has-vault';
+    btn.style.cssText = `color:${cl};border-color:${cl}66;background:${cl}1a;`;
+  } else if (S.aiOnline) {
+    btn.innerHTML = '✦ AI will choose vault';
+    btn.className = '';
+    btn.style.cssText = 'color:var(--gold);';
+  } else {
+    btn.innerHTML = '📦 Choose Vault';
+    btn.className = '';
+    btn.style.cssText = '';
+  }
+}
+
 /* ---------- OPEN COMPOSE ---------- */
 function openCompose() {
   S.activeId = null; S.selCat = null;
@@ -1798,6 +1861,7 @@ function openCompose() {
   const dzUrlInp = document.getElementById('dz-url-input');
   if (dzUrlInp) dzUrlInp.value = '';
 
+  updateVaultIndicator();
   renderList();
   gotoView('compose');
   setTimeout(() => document.getElementById('title-input').focus(), 340);
@@ -1815,7 +1879,9 @@ function showVaultPicker(mode) {
   const aiBtn   = document.getElementById('vp-ai-btn');
 
   titleEl.textContent = _vpMode === 'move' ? 'Move to Vault' : 'Choose a Vault';
-  subEl.textContent   = _vpMode === 'move' ? 'Select the vault to move this into:' : 'Where should this be saved?';
+  subEl.textContent   = _vpMode === 'move' ? 'Select the vault to move this into:'
+    : _vpMode === 'select' ? 'Pre-select vault for this note:'
+    : 'Where should this be saved?';
   aiBtn.style.display = (S.aiOnline && _vpMode === 'save') ? 'flex' : 'none';
 
   grid.innerHTML = '';
@@ -1858,6 +1924,12 @@ async function pickVault(cat) {
       renderVaultGrid();
       openDetail(it.id); // refresh badge
     }
+    return;
+  }
+
+  if (_vpMode === 'select') {
+    S.selCat = cat;
+    updateVaultIndicator();
     return;
   }
 
@@ -2004,8 +2076,12 @@ function updateOllamaUI() {
   const pill    = document.getElementById('ollama-pill');
   const chatDot = document.getElementById('chat-dot');
   const chatNote= document.getElementById('chat-offline-note');
+  const sbDot   = document.getElementById('sb-status-dot');
+  const sbTxt   = document.getElementById('sb-status-txt');
 
   dot.className = 'status-dot' + (S.aiOnline ? ' online' : '');
+  if (sbDot) sbDot.className = 'status-dot' + (S.aiOnline ? ' online' : '');
+  if (sbTxt) sbTxt.textContent = S.aiOnline ? 'AI ready' : 'AI offline';
   if (chatDot)  chatDot.className  = 'chat-bar-dot' + (S.aiOnline ? ' online' : '');
   if (chatNote) chatNote.textContent = S.aiOnline ? '' : '(offline)';
 
@@ -2020,6 +2096,7 @@ function updateOllamaUI() {
   // Refresh compose category row visibility
   renderCatBtns();
   updateSaveBtn();
+  updateVaultIndicator();
 }
 
 /* --- Auto-categorise on save (returns category string) --- */
@@ -2220,6 +2297,7 @@ function wire() {
     openCompose();
     S.selCat = S.openVault;
     S.vaultContext = S.openVault;
+    updateVaultIndicator();
     updateSaveBtn();
   });
 
@@ -2233,6 +2311,10 @@ function wire() {
   const bodyI  = document.getElementById('body-input');
   titleI.addEventListener('input', updateSaveBtn);
   bodyI.addEventListener('input',  updateSaveBtn);
+  titleI.addEventListener('keydown', e => {
+    if (e.key === 'Tab') { e.preventDefault(); bodyI.focus(); }
+  });
+  document.getElementById('compose-vault-btn').addEventListener('click', () => showVaultPicker('select'));
 
   /* --- Formatting toolbar --- */
   document.getElementById('fmt-toolbar').addEventListener('click', e => {
