@@ -976,7 +976,24 @@ kbd {
 #d-body strong { color: var(--t1); font-weight: 700; }
 #d-body em { font-style: italic; }
 #d-body s { color: var(--t4); }
-#d-body code { background: var(--s-card); border: 1px solid var(--s-border); border-radius: 4px; padding: 1px 5px; font-size: 0.88em; font-family: Menlo,Consolas,monospace; color: var(--gold); }
+#d-body code, #d-body .md-code { background: var(--s-card); border: 1px solid var(--s-border); border-radius: 4px; padding: 1px 5px; font-size: 0.88em; font-family: Menlo,Consolas,monospace; color: var(--gold); }
+#d-body .md-pre { background: var(--s-card); border: 1px solid var(--s-border); border-radius: 8px; padding: 14px 18px; overflow-x: auto; margin: 12px 0; }
+#d-body .md-pre code { background: none; border: none; padding: 0; font-size: 13px; color: var(--t2); white-space: pre; }
+#d-body .md-p { margin: 0 0 2px; }
+#d-body .md-h1 { font-size: 22px; font-weight: 600; color: var(--t1); margin: 20px 0 10px; font-family: inherit; border-bottom: 1px solid var(--s-border); padding-bottom: 6px; }
+#d-body .md-h2 { font-size: 17px; font-weight: 600; color: var(--t1); margin: 16px 0 8px; font-family: inherit; }
+#d-body .md-hr { border: none; border-top: 1px solid var(--s-border); margin: 18px 0; }
+#d-body .md-bq { border-left: 3px solid var(--gold); padding: 4px 14px; margin: 10px 0; color: var(--t3); font-style: italic; background: rgba(212,146,46,0.04); border-radius: 0 6px 6px 0; }
+#d-body .md-ul, #d-body .md-ol { padding-left: 22px; margin: 8px 0; }
+#d-body .md-ul li, #d-body .md-ol li { margin: 3px 0; }
+#d-body .md-tasklist { list-style: none; padding-left: 4px; }
+#d-body .md-task { display: flex; align-items: baseline; gap: 8px; }
+#d-body .md-checkbox { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; border: 1.5px solid var(--s-border2); border-radius: 3px; font-size: 9px; flex-shrink: 0; color: var(--gold); }
+#d-body .md-done { color: var(--t4); text-decoration: line-through; }
+#d-body .md-done .md-checkbox { background: rgba(212,146,46,0.15); border-color: rgba(212,146,46,0.4); }
+#d-body .md-link { color: var(--gold); text-decoration: none; }
+#d-body .md-link:hover { text-decoration: underline; }
+#d-body .md-br { display: block; height: 4px; }
 
 .detail-foot {
   padding: 14px 40px;
@@ -2762,15 +2779,93 @@ function deleteActive() {
 /* ---------- MARKDOWN RENDERER ---------- */
 function renderMarkdown(text) {
   if (!text) return '';
-  let html = esc(text);
-  html = html.replace(/^# (.+)$/gm, '<h2>$1</h2>');
-  html = html.replace(/^## (.+)$/gm, '<h3>$1</h3>');
-  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-  html = html.replace(/~~(.+?)~~/g, '<s>$1</s>');
-  html = html.replace(/`(.+?)`/g, '<code>$1</code>');
-  html = html.replace(/\n/g, '<br>');
-  return html;
+
+  // Inline formatter (applied inside blocks)
+  function inlineFormat(s) {
+    s = s
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/~~(.+?)~~/g, '<s>$1</s>')
+      .replace(/`(.+?)`/g, '<code class="md-code">$1</code>')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" class="md-link">$1</a>');
+    return s;
+  }
+
+  const lines = text.split('\n');
+  const out = [];
+  let inUl = false, inOl = false, inCode = false, codeLines = [], olIdx = 0;
+
+  function closeList() {
+    if (inUl) { out.push('</ul>'); inUl = false; }
+    if (inOl) { out.push('</ol>'); inOl = false; olIdx = 0; }
+  }
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Code fence
+    if (line.trim().startsWith('```')) {
+      if (!inCode) { closeList(); inCode = true; codeLines = []; continue; }
+      else {
+        out.push(`<pre class="md-pre"><code>${codeLines.map(l => l.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')).join('\n')}</code></pre>`);
+        inCode = false; codeLines = []; continue;
+      }
+    }
+    if (inCode) { codeLines.push(line); continue; }
+
+    // Headings
+    if (/^# /.test(line))  { closeList(); out.push(`<h2 class="md-h1">${inlineFormat(line.slice(2))}</h2>`); continue; }
+    if (/^## /.test(line)) { closeList(); out.push(`<h3 class="md-h2">${inlineFormat(line.slice(3))}</h3>`); continue; }
+
+    // Horizontal rule
+    if (/^---+$/.test(line.trim())) { closeList(); out.push('<hr class="md-hr">'); continue; }
+
+    // Blockquote
+    if (/^> /.test(line)) { closeList(); out.push(`<blockquote class="md-bq">${inlineFormat(line.slice(2))}</blockquote>`); continue; }
+
+    // Task list item
+    if (/^- \[[ x]\] /.test(line)) {
+      if (!inUl) { out.push('<ul class="md-ul md-tasklist">'); inUl = true; }
+      const checked = line[3] === 'x';
+      const content = inlineFormat(line.slice(6));
+      out.push(`<li class="md-task${checked ? ' md-done' : ''}"><span class="md-checkbox">${checked ? '✓' : ''}</span>${content}</li>`);
+      continue;
+    }
+
+    // Unordered list
+    if (/^- /.test(line) || /^\* /.test(line)) {
+      if (inOl) { out.push('</ol>'); inOl = false; olIdx = 0; }
+      if (!inUl) { out.push('<ul class="md-ul">'); inUl = true; }
+      out.push(`<li>${inlineFormat(line.slice(2))}</li>`);
+      continue;
+    }
+
+    // Ordered list
+    const olMatch = line.match(/^(\d+)\. (.+)/);
+    if (olMatch) {
+      if (inUl) { out.push('</ul>'); inUl = false; }
+      if (!inOl) { out.push('<ol class="md-ol">'); inOl = true; }
+      out.push(`<li>${inlineFormat(olMatch[2])}</li>`);
+      continue;
+    }
+
+    // Blank line — close lists, add spacing
+    if (line.trim() === '') {
+      closeList();
+      out.push('<br class="md-br">');
+      continue;
+    }
+
+    // Normal paragraph line
+    closeList();
+    out.push(`<p class="md-p">${inlineFormat(line)}</p>`);
+  }
+
+  if (inCode) out.push(`<pre class="md-pre"><code>${codeLines.join('\n')}</code></pre>`);
+  closeList();
+
+  return out.join('');
 }
 
 /* ---------- TOAST ---------- */
