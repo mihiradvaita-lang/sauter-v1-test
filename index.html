@@ -583,6 +583,12 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
 }
 .vi-card:hover .vi-card-del { opacity: 1; pointer-events: all; }
 .vi-card-del:hover { background: rgba(200,60,60,0.2); color: #e05555; transform: scale(1.15); }
+.vi-card.vi-focused {
+  border-color: var(--vi-accent, var(--gold));
+  box-shadow: 0 0 0 2px rgba(212,146,46,0.18);
+  background: var(--s-card);
+}
+.vi-card.vi-focused .vi-card-del { opacity: 1; pointer-events: all; }
 
 .vi-ai-btn {
   width: 28px; height: 28px; border-radius: 50%;
@@ -2045,16 +2051,35 @@ function openVaultInterior(cat) {
   if (!items.length) {
     const emptyDiv = document.createElement('div');
     emptyDiv.className = 'vault-empty-state';
-    emptyDiv.innerHTML = `
-      <div class="vault-empty-icon" style="color:${color}">${icon}</div>
-      <div class="vault-empty-msg">Nothing in ${esc(cat)} yet</div>
-      <button class="vault-empty-cta">+ Add your first note</button>
-    `;
-    emptyDiv.querySelector('.vault-empty-cta').addEventListener('click', () => {
-      openCompose();
-      S.selCat = cat; S.vaultContext = cat;
-      updateVaultIndicator(); updateSaveBtn();
-    });
+    if (viQ && allItems.length > 0) {
+      // Search returned no results
+      emptyDiv.innerHTML = `
+        <div class="vault-empty-icon" style="color:${color};opacity:0.4">🔍</div>
+        <div class="vault-empty-msg">No notes match "<strong>${esc(viQ)}</strong>"</div>
+        <button class="vault-empty-cta vault-clear-search-cta">Clear search</button>
+      `;
+      emptyDiv.querySelector('.vault-clear-search-cta').addEventListener('click', () => {
+        const inp = document.getElementById('vi-search-input');
+        if (inp) inp.value = '';
+        S._viSearch = '';
+        const clr = document.getElementById('vi-search-clear');
+        if (clr) clr.style.display = 'none';
+        openVaultInterior(cat);
+        if (inp) inp.focus();
+      });
+    } else {
+      // Vault is empty
+      emptyDiv.innerHTML = `
+        <div class="vault-empty-icon" style="color:${color}">${icon}</div>
+        <div class="vault-empty-msg">Nothing in ${esc(cat)} yet</div>
+        <button class="vault-empty-cta">+ Add your first note</button>
+      `;
+      emptyDiv.querySelector('.vault-empty-cta').addEventListener('click', () => {
+        openCompose();
+        S.selCat = cat; S.vaultContext = cat;
+        updateVaultIndicator(); updateSaveBtn();
+      });
+    }
     list.appendChild(emptyDiv);
   } else {
     // Sort newest first
@@ -2758,7 +2783,50 @@ document.addEventListener('keydown', e => {
     return;
   }
 
+  // J/K navigation within vault interior
+  if (S.view === 'vault' && (e.key === 'j' || e.key === 'k' || e.key === 'ArrowDown' || e.key === 'ArrowUp') && !e.target.closest('input, textarea')) {
+    e.preventDefault();
+    const cards = [...document.querySelectorAll('#vi-list .vi-card')];
+    if (!cards.length) return;
+    const focused = document.querySelector('.vi-card.vi-focused');
+    const idx = focused ? cards.indexOf(focused) : -1;
+    if (focused) focused.classList.remove('vi-focused');
+    let next;
+    if (e.key === 'j' || e.key === 'ArrowDown') next = cards[Math.min(idx + 1, cards.length - 1)];
+    else next = cards[Math.max(idx - 1, 0)];
+    if (next) { next.classList.add('vi-focused'); next.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+    return;
+  }
+  if (S.view === 'vault' && e.key === 'Enter' && !e.target.closest('input, textarea')) {
+    const focused = document.querySelector('.vi-card.vi-focused');
+    if (focused) { focused.click(); return; }
+  }
+  if (S.view === 'vault' && e.key === 'n' && !e.target.closest('input, textarea')) {
+    e.preventDefault();
+    openCompose(); S.selCat = S.openVault; S.vaultContext = S.openVault;
+    updateVaultIndicator(); updateSaveBtn();
+    return;
+  }
+  if (S.view === 'vault' && e.key === '/' && !e.target.closest('input, textarea')) {
+    e.preventDefault();
+    document.getElementById('vi-search-input').focus();
+    return;
+  }
+
   if (e.key === 'Escape') {
+    // Clear vault keyboard focus
+    const viFocused = document.querySelector('.vi-card.vi-focused');
+    if (viFocused) { viFocused.classList.remove('vi-focused'); return; }
+    // Clear vault search
+    const inp = document.getElementById('vi-search-input');
+    if (S.view === 'vault' && S._viSearch) {
+      if (inp) inp.value = '';
+      S._viSearch = '';
+      const clr = document.getElementById('vi-search-clear');
+      if (clr) clr.style.display = 'none';
+      openVaultInterior(S.openVault);
+      return;
+    }
     // Close overlays first (highest priority)
     const vpOverlay = document.getElementById('vault-picker-overlay');
     if (vpOverlay && vpOverlay.classList.contains('open')) { closeVaultPicker(); return; }
