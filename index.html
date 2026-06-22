@@ -192,6 +192,17 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
   display: -webkit-box; -webkit-line-clamp: 2;
   -webkit-box-orient: vertical; overflow: hidden;
 }
+.ic-quick-del {
+  position: absolute; top: 8px; right: 8px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(200,60,60,0.1); border: none;
+  color: rgba(200,80,80,0.6); font-size: 9px;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none;
+  transition: all 140ms var(--eo); cursor: pointer;
+}
+.item-card:hover .ic-quick-del { opacity: 1; pointer-events: all; }
+.ic-quick-del:hover { background: rgba(200,60,60,0.25); color: #e05555; transform: scale(1.1); }
 
 .sb-list-meta {
   display: flex; align-items: center; justify-content: space-between;
@@ -2489,8 +2500,30 @@ function renderList() {
         </div>
         <div class="ic-excerpt">${hl(excerpt.slice(0,115), S.search)}${excerpt.length > 115 ? '&hellip;' : ''}</div>
       </div>
+      <button class="ic-quick-del" data-id="${esc(it.id)}" title="Delete">✕</button>
     `;
-    el.addEventListener('click', () => openDetail(it.id));
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('.ic-quick-del')) return;
+      openDetail(it.id);
+    });
+    el.querySelector('.ic-quick-del')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const delId = e.currentTarget.dataset.id;
+      const delItem = S.items.find(i => i.id === delId);
+      if (!delItem) return;
+      const title = delItem.title || 'Untitled';
+      // Briefly highlight then remove
+      el.style.opacity = '0.4';
+      el.style.transform = 'translateX(-8px)';
+      el.style.transition = 'all 200ms ease';
+      setTimeout(() => {
+        S.items = S.items.filter(i => i.id !== delId);
+        store();
+        if (S.activeId === delId) { S.activeId = null; gotoView('empty'); }
+        renderCatFilters(); renderList(); renderVaultGrid(); renderRecentItems();
+        showToast(`"${title.slice(0,20)}" deleted`, 'warn');
+      }, 200);
+    });
     list.insertBefore(el, noRes);
   });
 }
