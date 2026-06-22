@@ -753,6 +753,18 @@ kbd {
 .vi-card:hover .vi-card-pin { opacity: 0.7; pointer-events: all; }
 .vi-card-pin:hover { opacity: 1 !important; background: rgba(212,146,46,0.18); }
 .vi-card-pinned .vi-card-pin { opacity: 1 !important; pointer-events: all; color: var(--gold); }
+.vi-card-copy {
+  position: absolute; top: 10px; right: 62px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1);
+  color: var(--t4); font-size: 10px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; opacity: 0; pointer-events: none;
+  transition: all 140ms var(--eo);
+}
+.vi-card:hover .vi-card-copy { opacity: 0.65; pointer-events: all; }
+.vi-card-copy:hover { opacity: 1 !important; background: rgba(255,255,255,0.09); color: var(--t1); }
+.vi-card.vi-focused .vi-card-copy { opacity: 0.65; pointer-events: all; }
 .vi-card-pinned { border-left: 2px solid rgba(212,146,46,0.4); }
 .vi-pin-badge { font-size: 10px; margin-right: 4px; }
 .vi-card-open-link {
@@ -2754,12 +2766,23 @@ function openVaultInterior(cat) {
             ${it.type === 'link' && it.url ? `<a class="vi-card-open-link" href="${esc(it.url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">↗ open</a>` : ''}
           </div>
         </div>
+        <button class="vi-card-copy" data-id="${esc(it.id)}" title="Copy to clipboard">⧉</button>
         <button class="vi-card-pin" data-id="${esc(it.id)}" title="${it.pinned ? 'Unpin' : 'Pin to top'}" style="color:${it.pinned ? 'var(--gold)' : ''}">📌</button>
         <button class="vi-card-del" data-id="${esc(it.id)}" title="Delete">✕</button>
       `;
       card.addEventListener('click', e => {
-        if (e.target.closest('.vi-card-del') || e.target.closest('.vi-card-pin') || e.target.closest('.vi-card-open-link')) return;
+        if (e.target.closest('.vi-card-del') || e.target.closest('.vi-card-pin') || e.target.closest('.vi-card-open-link') || e.target.closest('.vi-card-copy')) return;
         openDetail(it.id);
+      });
+      card.querySelector('.vi-card-copy').addEventListener('click', e => {
+        e.stopPropagation();
+        const copyId = e.currentTarget.dataset.id;
+        const item = S.items.find(x => x.id === copyId);
+        if (!item) return;
+        const text = item.type === 'link'
+          ? (item.url || item.title || '')
+          : ((item.title ? item.title + '\n\n' : '') + (item.body || '')).trim();
+        navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard', 'success'));
       });
       card.querySelector('.vi-card-pin').addEventListener('click', e => {
         e.stopPropagation();
