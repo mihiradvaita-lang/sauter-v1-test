@@ -1178,6 +1178,15 @@ kbd {
   cursor: pointer; transition: opacity 140ms var(--eo);
 }
 .detail-badge:hover { opacity: 0.72; }
+.d-nav-btn {
+  background: none; border: 1px solid transparent; cursor: pointer;
+  color: var(--t3); font-size: 18px; line-height: 1;
+  width: 28px; height: 28px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 140ms var(--eo);
+}
+.d-nav-btn:hover:not(:disabled) { color: var(--t1); background: var(--s-border); }
+.d-nav-btn:disabled { opacity: 0.22; cursor: default; }
 .detail-date-txt { font-size: 12px; color: var(--t3); }
 
 .detail-read-bar { height: 2px; background: var(--s-border); flex-shrink: 0; }
@@ -2089,6 +2098,10 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
           </svg>
           <span id="detail-back-label">All Notes</span>
         </button>
+        <div id="d-nav-bar" style="display:none;align-items:center;gap:2px;">
+          <button class="d-nav-btn" id="d-prev" title="Previous note (←)">‹</button>
+          <button class="d-nav-btn" id="d-next" title="Next note (→)">›</button>
+        </div>
         <div style="display:flex;align-items:center;gap:12px;">
           <div class="detail-badge" id="d-badge"></div>
           <span class="detail-date-txt" id="d-date"></span>
@@ -3353,6 +3366,39 @@ function openDetail(id) {
     backLabel.textContent = S.vaultContext ? S.vaultContext : 'All Notes';
   }
 
+  // Prev/next navigation within vault context
+  const dNavBar = document.getElementById('d-nav-bar');
+  const dPrevBtn = document.getElementById('d-prev');
+  const dNextBtn = document.getElementById('d-next');
+  if (dNavBar && dPrevBtn && dNextBtn && S.vaultContext) {
+    const cat = S.vaultContext;
+    const viQ2 = (S._viSearch || '').toLowerCase();
+    let navItems = S.items.filter(x => x.category === cat);
+    if (viQ2) navItems = navItems.filter(x => (x.title || '').toLowerCase().includes(viQ2) || (x.body || '').toLowerCase().includes(viQ2));
+    const vtf2 = S._viTypeFilter || 'all';
+    if (vtf2 !== 'all') navItems = navItems.filter(x => (x.type || 'note') === vtf2);
+    const sm = S._viSort || 'newest';
+    navItems = [...navItems].sort((a, b) => {
+      if (a.pinned && !b.pinned) return -1;
+      if (!a.pinned && b.pinned) return 1;
+      if (sm === 'oldest') return (a.createdAt || 0) - (b.createdAt || 0);
+      if (sm === 'alpha')  return (a.title || '').localeCompare(b.title || '');
+      return (b.createdAt || 0) - (a.createdAt || 0);
+    });
+    const navIdx = navItems.findIndex(x => x.id === id);
+    if (navItems.length > 1 && navIdx !== -1) {
+      dNavBar.style.display = 'flex';
+      dPrevBtn.disabled = navIdx === 0;
+      dNextBtn.disabled = navIdx === navItems.length - 1;
+      dPrevBtn.onclick = () => { if (navIdx > 0) openDetail(navItems[navIdx - 1].id); };
+      dNextBtn.onclick = () => { if (navIdx < navItems.length - 1) openDetail(navItems[navIdx + 1].id); };
+    } else {
+      dNavBar.style.display = 'none';
+    }
+  } else if (dNavBar) {
+    dNavBar.style.display = 'none';
+  }
+
   // Reading progress bar
   const scrollEl = document.getElementById('detail-scroll-el');
   const fillEl   = document.getElementById('d-read-fill');
@@ -3870,6 +3916,13 @@ document.addEventListener('keydown', e => {
       const si = document.getElementById('search-input');
       if (si) { si.focus(); si.select(); }
     }
+    return;
+  }
+
+  // ArrowLeft/Right navigation in detail view
+  if (S.view === 'detail' && (e.key === 'ArrowLeft' || e.key === 'ArrowRight') && !e.target.closest('input, textarea, [contenteditable]') && !ctrl) {
+    const btn = e.key === 'ArrowLeft' ? document.getElementById('d-prev') : document.getElementById('d-next');
+    if (btn && !btn.disabled && btn.style.display !== 'none') { e.preventDefault(); btn.click(); }
     return;
   }
 
