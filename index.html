@@ -356,13 +356,13 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
 .vault-tile.floating:hover { animation-play-state: paused; }
 .vault-tile:hover {
   background: var(--s-card2);
-  border-color: rgba(212,146,46,0.30);
-  scale: 1.07;
+  border-color: rgba(212,146,46,0.36);
+  scale: 1.08;
   box-shadow:
-    0 0 0 1px rgba(212,146,46,0.26),
+    0 0 0 1px rgba(212,146,46,0.32),
     0 10px 36px rgba(0,0,0,0.60),
-    0 0  70px rgba(212,146,46,0.38),
-    0 0 140px rgba(212,146,46,0.16);
+    0 0  88px rgba(212,146,46,0.50),
+    0 0 170px rgba(212,146,46,0.22);
 }
 .vault-tile { transition: background 220ms var(--eo), border-color 220ms var(--eo), box-shadow 220ms var(--eo), scale 220ms var(--eo); }
 
@@ -741,8 +741,14 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
 #d-body {
   font-size: 16px; line-height: 1.78; color: var(--t2);
   font-family: Georgia,'Times New Roman',serif;
-  white-space: pre-wrap; word-break: break-word;
+  word-break: break-word;
 }
+#d-body h2 { font-size: 22px; font-weight: 600; color: var(--t1); margin: 18px 0 10px; font-family: inherit; }
+#d-body h3 { font-size: 17px; font-weight: 600; color: var(--t1); margin: 14px 0 8px; font-family: inherit; }
+#d-body strong { color: var(--t1); font-weight: 700; }
+#d-body em { font-style: italic; }
+#d-body s { color: var(--t4); }
+#d-body code { background: var(--s-card); border: 1px solid var(--s-border); border-radius: 4px; padding: 1px 5px; font-size: 0.88em; font-family: Menlo,Consolas,monospace; color: var(--gold); }
 
 .detail-foot {
   padding: 14px 40px;
@@ -1176,6 +1182,128 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
   from { transform: translate(-50%,-50%) scale(1); opacity: 0.7; }
   to   { transform: translate(-50%,-50%) scale(9); opacity: 0; }
 }
+
+/* ===== TOAST ===== */
+.toast {
+  position: fixed; bottom: 32px; left: 50%;
+  transform: translateX(-50%) translateY(14px);
+  background: var(--s-card2); border: 1px solid var(--s-border2);
+  border-radius: 10px; padding: 10px 20px;
+  font-size: 13px; color: var(--t1);
+  z-index: 1100; pointer-events: none;
+  opacity: 0; transition: opacity 260ms var(--eo), transform 260ms var(--eo);
+  white-space: nowrap; box-shadow: 0 4px 24px rgba(0,0,0,0.45);
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ===== MAIN SCREEN BOTTOM BAR ===== */
+.main-bottom-bar {
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 3;
+  background: linear-gradient(to bottom, transparent 0%, rgba(12,10,7,0.88) 28%, rgba(12,10,7,0.97) 100%);
+  padding: 44px 40px 20px;
+  pointer-events: none;
+}
+.main-bottom-bar > * { pointer-events: auto; }
+
+.main-search-wrap {
+  position: relative; max-width: 520px; margin: 0 auto 12px;
+}
+.main-search-ico {
+  position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+  color: var(--t4); font-size: 16px; pointer-events: none; line-height: 1;
+  font-style: normal;
+}
+#main-search-input {
+  width: 100%;
+  background: rgba(22,18,9,0.82); border: 1px solid var(--s-border2);
+  border-radius: 10px; padding: 9px 36px;
+  color: var(--t1); font-size: 13px; outline: none;
+  backdrop-filter: blur(12px);
+  transition: border-color 220ms var(--eo), background 220ms var(--eo);
+}
+#main-search-input:focus { border-color: rgba(212,146,46,0.42); background: rgba(22,18,9,0.97); }
+#main-search-input::placeholder { color: var(--t4); }
+.main-search-clear {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--t4); font-size: 11px;
+  cursor: pointer; padding: 3px 5px; line-height: 1;
+  transition: color 160ms var(--eo);
+}
+.main-search-clear:hover { color: var(--t2); }
+
+/* ===== RECENT SECTION ===== */
+.recent-section { max-width: 520px; margin: 0 auto; }
+.recent-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 7px;
+}
+.recent-label {
+  font-size: 9.5px; letter-spacing: 0.13em; text-transform: uppercase;
+  color: var(--t4); font-weight: 500;
+}
+.recent-view-all {
+  font-size: 10px; color: var(--t3); background: none; border: none;
+  cursor: pointer; letter-spacing: 0.04em;
+  transition: color 160ms var(--eo);
+}
+.recent-view-all:hover { color: var(--gold); }
+.recent-list { display: flex; flex-direction: column; gap: 3px; }
+.recent-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 12px; border-radius: 9px;
+  background: rgba(22,18,9,0.75); border: 1px solid rgba(255,255,255,0.05);
+  cursor: pointer;
+  opacity: 0; transform: translateY(5px);
+  animation: card-in 280ms var(--eo) forwards;
+  transition: background 160ms var(--eo), border-color 160ms var(--eo);
+}
+.recent-item:hover { background: rgba(35,29,18,0.92); border-color: rgba(255,255,255,0.09); }
+.recent-type-badge { font-size: 13px; flex-shrink: 0; }
+.recent-title-txt {
+  flex: 1; font-size: 12px; color: var(--t2); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.recent-vault-chip {
+  font-size: 8.5px; padding: 2px 7px; border-radius: 20px; font-weight: 600;
+  letter-spacing: 0.06em; text-transform: uppercase; flex-shrink: 0;
+}
+.recent-date { font-size: 10px; color: var(--t4); flex-shrink: 0; }
+.recent-empty { text-align: center; color: var(--t4); font-size: 12px; padding: 10px 0; }
+
+/* ===== DETAIL EDIT BUTTON ===== */
+.edit-note-btn {
+  padding: 7px 14px; background: transparent;
+  border: 1px solid var(--s-border); border-radius: 8px;
+  font-size: 12px; color: var(--t3); flex-shrink: 0;
+  transition: all 200ms var(--eo);
+}
+.edit-note-btn:hover { color: var(--gold); border-color: rgba(212,146,46,0.32); }
+
+/* ===== MOBILE ===== */
+@media (max-width: 640px) {
+  #sidebar { width: 220px; min-width: 220px; }
+  .vault-grid {
+    display: flex !important; flex-wrap: wrap !important;
+    position: relative !important; inset: auto !important;
+    padding: 12px !important; gap: 10px !important;
+    justify-content: center; align-content: flex-start;
+  }
+  .vault-tile {
+    position: relative !important; left: 0 !important; top: 0 !important;
+    width: 44% !important; max-width: 145px !important;
+  }
+  .vault-tile.floating { animation: none !important; transform: none !important; }
+  .vault-section { position: relative !important; inset: auto !important; pointer-events: all !important; }
+  #v-empty { overflow-y: auto !important; flex-direction: column !important; }
+  .empty-hero {
+    position: relative !important; transform: none !important;
+    white-space: normal !important; padding: 28px 16px 16px !important;
+  }
+  .main-bottom-bar {
+    position: relative !important; background: var(--s-bg) !important;
+    padding: 16px !important;
+  }
+  #gravity-canvas { display: none; }
+}
 </style>
 </head>
 <body>
@@ -1237,6 +1365,22 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
       <div class="vault-section">
         <div class="vault-section-title">Your Vaults</div>
         <div class="vault-grid" id="vault-grid"></div>
+      </div>
+
+      <!-- Main screen: search + recent items -->
+      <div class="main-bottom-bar" id="main-bottom-bar">
+        <div class="main-search-wrap">
+          <i class="main-search-ico">&#8981;</i>
+          <input id="main-search-input" type="text" placeholder="Search your notes…" autocomplete="off" spellcheck="false">
+          <button class="main-search-clear" id="main-search-clear" style="display:none">✕</button>
+        </div>
+        <div class="recent-section">
+          <div class="recent-header">
+            <span class="recent-label">Recent</span>
+            <button class="recent-view-all" id="recent-view-all" style="display:none">View all →</button>
+          </div>
+          <div class="recent-list" id="recent-list"></div>
+        </div>
       </div>
     </div>
 
@@ -1337,7 +1481,10 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
 
       <div class="detail-foot">
         <span class="d-saved" id="d-saved"></span>
-        <button class="move-vault-btn" id="move-vault-btn">⤲ Move</button>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <button class="edit-note-btn" id="edit-btn">✏ Edit</button>
+          <button class="move-vault-btn" id="move-vault-btn">⤲ Move</button>
+        </div>
         <div class="del-wrap">
           <div class="del-confirm-wrap" id="del-confirm">
             <span>Delete this note?</span>
@@ -1416,6 +1563,9 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
   </div>
 </div>
 
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
 <!-- VAULT CREATE MODAL -->
 <div class="vault-create-overlay" id="vault-create-overlay">
   <div class="vault-create-sheet">
@@ -1460,6 +1610,8 @@ let S = {
   customVaults: [],
   openVault: null,
   vaultContext: null,
+  editId: null,
+  mainSearch: '',
 };
 
 /* ---------- STORAGE ---------- */
@@ -1519,7 +1671,7 @@ function gotoView(v) {
   if (prev) { prev.classList.remove('active'); prev.classList.add('exit'); setTimeout(() => prev.classList.remove('exit'), 310); }
   if (next) { next.classList.remove('exit'); requestAnimationFrame(() => requestAnimationFrame(() => next.classList.add('active'))); }
   S.view = v;
-  if (v === 'empty') Gravity.start(); else Gravity.stop();
+  if (v === 'empty') { Gravity.start(); renderRecentItems(); } else Gravity.stop();
   if (v !== 'vault' && v !== 'detail') S.vaultContext = null;
 }
 
@@ -1694,8 +1846,10 @@ function showVaultCreate() {
   inp.value = '';
   document.getElementById('vc-create-btn').disabled = true;
   overlay.classList.add('open');
-  requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('visible')));
-  setTimeout(() => inp.focus(), 280);
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    overlay.classList.add('visible');
+    inp.focus();
+  }));
 }
 
 function closeVaultCreate() {
@@ -1846,7 +2000,7 @@ function updateVaultIndicator() {
 
 /* ---------- OPEN COMPOSE ---------- */
 function openCompose() {
-  S.activeId = null; S.selCat = null;
+  S.activeId = null; S.selCat = null; S.editId = null;
   S.aiThinking = false; S.delPending = false;
   S.composeAttachments = [];
 
@@ -1922,6 +2076,8 @@ async function pickVault(cat) {
       store();
       renderCatFilters();
       renderVaultGrid();
+      renderRecentItems();
+      showToast('Moved to ' + cat + ' ✓');
       openDetail(it.id); // refresh badge
     }
     return;
@@ -1979,6 +2135,33 @@ async function _finishSave() {
     category = await aiAutoCategorize(title, body || url || '');
   }
 
+  btn.classList.remove('saving');
+  btn.textContent = 'Save';
+  S.composeAttachments = [];
+  S.selCat = null;
+
+  // EDIT MODE: update existing item in-place
+  if (S.editId) {
+    const idx = S.items.findIndex(i => i.id === S.editId);
+    if (idx !== -1) {
+      const old = S.items[idx];
+      S.items[idx] = {
+        id: old.id, createdAt: old.createdAt,
+        title, body, category, type,
+        ...(url   ? { url }   : {}),
+        ...(image ? { image } : {}),
+      };
+    }
+    const eid = S.editId;
+    S.editId = null;
+    store();
+    renderCatFilters(); renderList(); renderVaultGrid(); renderRecentItems();
+    showToast('Note updated ✓');
+    if (S.vaultContext) openVaultInterior(S.vaultContext);
+    else openDetail(eid);
+    return;
+  }
+
   const item = {
     id: uid(), title, body, category, type,
     ...(url   ? { url }   : {}),
@@ -1988,13 +2171,10 @@ async function _finishSave() {
   S.items.unshift(item);
   store();
 
-  btn.classList.remove('saving');
-  btn.textContent = 'Save';
-  S.composeAttachments = [];
-  S.selCat = null;
-
   renderCatFilters();
   renderVaultGrid();
+  renderRecentItems();
+  showToast('Saved to ' + category + ' ✓');
   if (S.vaultContext) {
     openVaultInterior(S.vaultContext);
   } else {
@@ -2013,7 +2193,7 @@ function openDetail(id) {
   document.getElementById('d-badge').style.cssText  = catStyle(it.category);
   document.getElementById('d-date').textContent    = fmt(it.createdAt);
   document.getElementById('d-title').textContent   = it.title || 'Untitled';
-  document.getElementById('d-body').textContent    = it.body || '';
+  document.getElementById('d-body').innerHTML      = renderMarkdown(it.body || '');
   document.getElementById('d-saved').textContent   = 'Saved ' + fmtLong(it.createdAt);
 
   // Link bar
@@ -2048,9 +2228,116 @@ function openDetail(id) {
 function deleteActive() {
   S.items = S.items.filter(i => i.id !== S.activeId);
   store(); S.activeId = null; S.delPending = false;
-  renderCatFilters(); renderList(); renderVaultGrid();
+  renderCatFilters(); renderList(); renderVaultGrid(); renderRecentItems();
+  showToast('Note deleted');
   if (S.vaultContext) openVaultInterior(S.vaultContext);
   else gotoView('empty');
+}
+
+/* ---------- MARKDOWN RENDERER ---------- */
+function renderMarkdown(text) {
+  if (!text) return '';
+  let html = esc(text);
+  html = html.replace(/^# (.+)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  html = html.replace(/~~(.+?)~~/g, '<s>$1</s>');
+  html = html.replace(/`(.+?)`/g, '<code>$1</code>');
+  html = html.replace(/\n/g, '<br>');
+  return html;
+}
+
+/* ---------- TOAST ---------- */
+let _toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { el.classList.remove('show'); _toastTimer = null; }, 2500);
+}
+
+/* ---------- RECENT ITEMS (main screen) ---------- */
+function renderRecentItems() {
+  const list       = document.getElementById('recent-list');
+  const clearBtn   = document.getElementById('main-search-clear');
+  const viewAllBtn = document.getElementById('recent-view-all');
+  if (!list) return;
+
+  const q = (S.mainSearch || '').toLowerCase();
+  let items;
+
+  if (q) {
+    items = S.items.filter(it =>
+      (it.title || '').toLowerCase().includes(q) ||
+      (it.body  || '').toLowerCase().includes(q)
+    );
+    if (clearBtn) clearBtn.style.display = '';
+  } else {
+    items = S.items.slice(0, 10);
+    if (clearBtn) clearBtn.style.display = 'none';
+  }
+
+  if (viewAllBtn) viewAllBtn.style.display = (!q && S.items.length > 10) ? '' : 'none';
+
+  list.innerHTML = '';
+
+  if (!S.items.length) {
+    list.innerHTML = '<div class="recent-empty">No notes yet — press + to create your first</div>';
+    return;
+  }
+
+  if (q && !items.length) {
+    list.innerHTML = '<div class="recent-empty">Nothing matched — try different words</div>';
+    return;
+  }
+
+  items.slice(0, 10).forEach((it, i) => {
+    const badge = it.type === 'link' ? '🔗' : it.type === 'photo' ? '🖼' : '📝';
+    const color = vaultColor(it.category);
+    const el = document.createElement('div');
+    el.className = 'recent-item';
+    el.style.animationDelay = (i * 28) + 'ms';
+    el.innerHTML = `
+      <span class="recent-type-badge">${badge}</span>
+      <span class="recent-title-txt">${esc(it.title || 'Untitled')}</span>
+      <span class="recent-vault-chip" style="color:${color};background:${color}1a;border:1px solid ${color}44;">${esc(it.category)}</span>
+      <span class="recent-date">${fmt(it.createdAt)}</span>
+    `;
+    el.addEventListener('click', () => openDetail(it.id));
+    list.appendChild(el);
+  });
+}
+
+/* ---------- OPEN EDIT (pre-fill compose with existing item) ---------- */
+function openEdit(id) {
+  const it = S.items.find(i => i.id === id);
+  if (!it) return;
+
+  S.editId  = id;
+  S.activeId = id;
+  S.selCat  = it.category;
+  S.aiThinking = false; S.delPending = false;
+  S.composeAttachments = [];
+
+  document.getElementById('title-input').value = it.title || '';
+  document.getElementById('body-input').value  = it.body  || '';
+  const btn = document.getElementById('save-btn');
+  btn.disabled = false; btn.textContent = 'Update'; btn.classList.remove('saving');
+
+  const dzPreviews = document.getElementById('dropzone-previews');
+  if (dzPreviews) dzPreviews.innerHTML = '';
+  const dzUrlInp = document.getElementById('dz-url-input');
+  if (dzUrlInp) dzUrlInp.value = '';
+
+  if (it.url)   addAttachment('link',  it.url,   it.url);
+  if (it.image) addAttachment('image', it.image, 'Image');
+
+  updateVaultIndicator();
+  gotoView('compose');
+  setTimeout(() => document.getElementById('title-input').focus(), 340);
 }
 
 /* ===========================
@@ -2179,13 +2466,31 @@ document.addEventListener('keydown', e => {
 
   if (ctrl && e.key === 'n') { e.preventDefault(); openCompose(); return; }
 
-  if (ctrl && e.key === 's' && S.view === 'compose') {
+  if (ctrl && (e.key === 's' || e.key === 'Enter') && S.view === 'compose') {
     e.preventDefault();
     if (!document.getElementById('save-btn').disabled) saveNote();
     return;
   }
 
+  if (ctrl && e.key === 'k') {
+    e.preventDefault();
+    if (S.view === 'empty') {
+      const msi = document.getElementById('main-search-input');
+      if (msi) { msi.focus(); msi.select(); }
+    } else {
+      const si = document.getElementById('search-input');
+      if (si) { si.focus(); si.select(); }
+    }
+    return;
+  }
+
   if (e.key === 'Escape') {
+    // Close overlays first (highest priority)
+    const vpOverlay = document.getElementById('vault-picker-overlay');
+    if (vpOverlay && vpOverlay.classList.contains('open')) { closeVaultPicker(); return; }
+    const vcOverlay = document.getElementById('vault-create-overlay');
+    if (vcOverlay && vcOverlay.classList.contains('open')) { closeVaultCreate(); return; }
+
     if (S.helpOpen) {
       S.helpOpen = false;
       document.getElementById('ai-help-pop').classList.remove('show');
@@ -2203,7 +2508,7 @@ document.addEventListener('keydown', e => {
       return;
     }
     if (S.view === 'compose' || S.view === 'detail') {
-      S.activeId = null; renderList();
+      S.activeId = null; S.editId = null; renderList();
       if (S.vaultContext) openVaultInterior(S.vaultContext);
       else gotoView('empty');
     }
@@ -2519,6 +2824,11 @@ function wire() {
   });
   document.getElementById('del-yes').addEventListener('click', deleteActive);
 
+  /* --- Edit button --- */
+  document.getElementById('edit-btn').addEventListener('click', () => {
+    if (S.activeId) openEdit(S.activeId);
+  });
+
   /* --- Move vault button --- */
   document.getElementById('move-vault-btn').addEventListener('click', () => {
     showVaultPicker('move');
@@ -2555,6 +2865,30 @@ function wire() {
   document.getElementById('vault-create-overlay').addEventListener('click', e => {
     if (e.target.id === 'vault-create-overlay') closeVaultCreate();
   });
+
+  /* --- Main screen search --- */
+  const mainSearch = document.getElementById('main-search-input');
+  const mainClear  = document.getElementById('main-search-clear');
+  if (mainSearch) {
+    mainSearch.addEventListener('input', e => {
+      S.mainSearch = e.target.value;
+      renderRecentItems();
+    });
+  }
+  if (mainClear) {
+    mainClear.addEventListener('click', () => {
+      S.mainSearch = '';
+      if (mainSearch) { mainSearch.value = ''; mainSearch.focus(); }
+      renderRecentItems();
+    });
+  }
+  const viewAllBtn = document.getElementById('recent-view-all');
+  if (viewAllBtn) {
+    viewAllBtn.addEventListener('click', () => {
+      S.catFilter = ''; renderCatFilters(); renderList();
+      document.getElementById('search-input').focus();
+    });
+  }
 
   /* --- Document-level paste: forward clipboard images to dropzone when in compose view --- */
   document.addEventListener('paste', e => {
