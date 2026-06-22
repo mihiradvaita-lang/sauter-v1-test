@@ -193,6 +193,18 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
   -webkit-box-orient: vertical; overflow: hidden;
 }
 
+.sb-list-meta {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 14px 4px 18px; flex-shrink: 0;
+}
+.sb-item-count { font-size: 10px; color: var(--t4); }
+.sb-sort-toggle {
+  font-size: 10px; color: var(--t4); background: transparent; border: none;
+  padding: 2px 6px; border-radius: 6px; cursor: pointer;
+  transition: all 140ms var(--eo);
+}
+.sb-sort-toggle:hover { background: var(--s-card); color: var(--t2); }
+.sb-sort-toggle.active { color: var(--gold); }
 .no-results { padding: 40px 18px; text-align: center; font-size: 12px; color: var(--t4); display: none; }
 
 /* ===== SIDEBAR FOOTER ===== */
@@ -1655,6 +1667,10 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
     </div>
 
     <div id="cat-filters"></div>
+    <div class="sb-list-meta" id="sb-list-meta">
+      <span class="sb-item-count" id="sb-item-count"></span>
+      <button class="sb-sort-toggle" id="sb-sort-toggle" title="Sort order">↕</button>
+    </div>
 
     <div id="item-list">
       <div class="no-results" id="no-res">Nothing found</div>
@@ -2420,7 +2436,23 @@ function deleteCustomVault(name) {
 function renderList() {
   const list  = document.getElementById('item-list');
   const noRes = document.getElementById('no-res');
-  const items = filtered();
+  let items = filtered();
+
+  // Apply sidebar sort
+  const sbSort = S._sbSort || 'newest';
+  items = [...items].sort((a, b) => {
+    if (sbSort === 'alpha')  return (a.title || '').localeCompare(b.title || '');
+    if (sbSort === 'edited') {
+      const aT = a.updatedAt || a.createdAt || 0;
+      const bT = b.updatedAt || b.createdAt || 0;
+      return bT - aT;
+    }
+    return (b.createdAt || 0) - (a.createdAt || 0);
+  });
+
+  // Update count
+  const countEl = document.getElementById('sb-item-count');
+  if (countEl) countEl.textContent = items.length > 0 ? `${items.length} note${items.length !== 1 ? 's' : ''}` : '';
 
   [...list.children].forEach(c => { if (c !== noRes) c.remove(); });
 
@@ -3354,6 +3386,22 @@ function wire() {
     URL.revokeObjectURL(a.href);
     showToast(`Exported ${items.length} note${items.length !== 1 ? 's' : ''} ✓`, 'success');
   });
+
+  /* --- Sidebar sort toggle --- */
+  const sbSortModes = ['newest', 'edited', 'alpha'];
+  const sbSortLabels = { newest: '↕ Newest', edited: '✏ Edited', alpha: '🔤 A–Z' };
+  const sbSortBtn = document.getElementById('sb-sort-toggle');
+  if (sbSortBtn) {
+    S._sbSort = S._sbSort || 'newest';
+    sbSortBtn.textContent = sbSortLabels[S._sbSort];
+    sbSortBtn.addEventListener('click', () => {
+      const idx = sbSortModes.indexOf(S._sbSort);
+      S._sbSort = sbSortModes[(idx + 1) % sbSortModes.length];
+      sbSortBtn.textContent = sbSortLabels[S._sbSort];
+      sbSortBtn.classList.toggle('active', S._sbSort !== 'newest');
+      renderList();
+    });
+  }
 
   /* --- Vault sort menu --- */
   const viSortBtn = document.getElementById('vi-sort-btn');
