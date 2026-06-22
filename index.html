@@ -328,7 +328,7 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
   position: absolute;
   width: 114px;
   background: var(--s-card);
-  border: 1px solid rgba(212,146,46,0.15);
+  border: 1px solid rgba(var(--va,212,146,46),0.15);
   border-radius: 13px;
   padding: 13px 10px;
   display: flex; flex-direction: column;
@@ -339,12 +339,12 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
   animation: card-in 400ms var(--eo) forwards;
   transition: background 220ms var(--eo), border-color 220ms var(--eo), box-shadow 220ms var(--eo);
   will-change: transform;
-  /* Persistent amber halo — tile acts as a warm light source */
+  /* Per-vault accent halo — colour comes from --va set per-tile in JS */
   box-shadow:
-    0 0 0 1px rgba(212,146,46,0.10),
+    0 0 0 1px rgba(var(--va,212,146,46),0.10),
     0 10px 36px rgba(0,0,0,0.60),
-    0 0  55px rgba(212,146,46,0.20),
-    0 0 110px rgba(212,146,46,0.08);
+    0 0  55px rgba(var(--va,212,146,46),0.20),
+    0 0 110px rgba(var(--va,212,146,46),0.08);
 }
 
 /* Float once card-in completes */
@@ -356,13 +356,13 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
 .vault-tile.floating:hover { animation-play-state: paused; }
 .vault-tile:hover {
   background: var(--s-card2);
-  border-color: rgba(212,146,46,0.36);
+  border-color: rgba(var(--va,212,146,46),0.36);
   scale: 1.08;
   box-shadow:
-    0 0 0 1px rgba(212,146,46,0.32),
+    0 0 0 1px rgba(var(--va,212,146,46),0.32),
     0 10px 36px rgba(0,0,0,0.60),
-    0 0  88px rgba(212,146,46,0.50),
-    0 0 170px rgba(212,146,46,0.22);
+    0 0  88px rgba(var(--va,212,146,46),0.50),
+    0 0 170px rgba(var(--va,212,146,46),0.22);
 }
 .vault-tile { transition: background 220ms var(--eo), border-color 220ms var(--eo), box-shadow 220ms var(--eo), scale 220ms var(--eo); }
 
@@ -1278,6 +1278,63 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
 }
 .edit-note-btn:hover { color: var(--gold); border-color: rgba(212,146,46,0.32); }
 
+/* ===== VAULT INTERIOR EMPTY STATE ===== */
+.vault-empty-state {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 0;
+  padding: 40px 20px;
+}
+.vault-empty-icon {
+  font-size: 52px; opacity: 0.45;
+  margin-bottom: 16px; line-height: 1;
+  filter: drop-shadow(0 0 18px currentColor);
+}
+.vault-empty-msg {
+  font-size: 14px; color: var(--t3); margin-bottom: 20px;
+  text-align: center; line-height: 1.5;
+}
+.vault-empty-cta {
+  padding: 9px 22px;
+  background: var(--gold-dim); border: 1px solid rgba(212,146,46,0.28);
+  border-radius: 10px; color: var(--gold2);
+  font-size: 13px; font-weight: 500;
+  transition: all 220ms var(--eo);
+}
+.vault-empty-cta:hover { background: rgba(212,146,46,0.18); transform: translateY(-1px); }
+
+/* ===== TYPE BADGE PILLS ===== */
+.recent-type-pill {
+  font-size: 12px; flex-shrink: 0;
+  padding: 2px 8px; border-radius: 8px;
+  font-weight: 500;
+}
+.vi-type-pill {
+  width: 30px; height: 30px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; flex-shrink: 0;
+}
+
+/* ===== COMPOSE VAULT CONTEXT ===== */
+#compose-vault-ctx {
+  display: none; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--t4); letter-spacing: 0.03em;
+}
+#compose-vault-ctx-name {
+  font-size: 12px; font-weight: 600; letter-spacing: 0;
+}
+
+/* ===== SIDEBAR AI STATUS ===== */
+.sb-ai-row.ai-online .sb-ai-label { color: var(--gold); }
+.sb-ai-row.ai-online .status-dot { animation: ai-pulse-dot 2.4s ease-in-out infinite; }
+@keyframes ai-pulse-dot {
+  0%,100% { box-shadow: 0 0 0 0 rgba(76,175,118,0.5); }
+  50%      { box-shadow: 0 0 0 5px rgba(76,175,118,0); }
+}
+
+/* ===== DETAIL BODY READABILITY ===== */
+.detail-scroll-inner { max-width: 72ch; }
+#d-body { max-width: 72ch; margin: 0; }
+
 /* ===== MOBILE ===== */
 @media (max-width: 640px) {
   #sidebar { width: 220px; min-width: 220px; }
@@ -1399,6 +1456,9 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
           </svg>
           Back
         </button>
+        <div id="compose-vault-ctx">
+          Saving to <span id="compose-vault-ctx-name"></span>
+        </div>
         <div class="ollama-pill" id="ollama-pill">
           <div class="status-dot" id="status-dot"></div>
           <span id="status-txt">Checking AI…</span>
@@ -1623,6 +1683,7 @@ function storeCustomVaults() { localStorage.setItem(CV_KEY, JSON.stringify(S.cus
 function allVaults() { return [...CATS, ...S.customVaults.map(v => v.name)]; }
 function vaultColor(cat) { return CAT_COLORS[cat] || S.customVaults.find(v => v.name === cat)?.color || '#8A7A60'; }
 function vaultIcon(cat)  { return CAT_ICONS[cat]  || S.customVaults.find(v => v.name === cat)?.icon  || '◎'; }
+function hexToRgb(hex)   { const h = hex.replace('#',''); return `${parseInt(h.slice(0,2),16)},${parseInt(h.slice(2,4),16)},${parseInt(h.slice(4,6),16)}`; }
 
 /* ---------- TIME ---------- */
 function fmt(iso) {
@@ -1727,6 +1788,7 @@ function renderVaultGrid() {
     tile.style.animationDelay = (i * 60) + 'ms';
     tile.style.setProperty('--float-dur',   floatDurs[i % floatDurs.length] + 's');
     tile.style.setProperty('--float-phase', '-' + (i * 0.62).toFixed(2) + 's');
+    tile.style.setProperty('--va', hexToRgb(color));
 
     tile.innerHTML = `
       ${isCustom ? '<button class="vault-tile-delete" title="Delete vault">×</button>' : ''}
@@ -1814,15 +1876,29 @@ function openVaultInterior(cat) {
   list.innerHTML = '';
 
   if (!items.length) {
-    list.innerHTML = `<div class="vault-empty-state"><span>${icon}</span><div>This vault is empty — tap + to add your first item</div></div>`;
+    const emptyDiv = document.createElement('div');
+    emptyDiv.className = 'vault-empty-state';
+    emptyDiv.innerHTML = `
+      <div class="vault-empty-icon" style="color:${color}">${icon}</div>
+      <div class="vault-empty-msg">Nothing in ${esc(cat)} yet</div>
+      <button class="vault-empty-cta">+ Add your first note</button>
+    `;
+    emptyDiv.querySelector('.vault-empty-cta').addEventListener('click', () => {
+      openCompose();
+      S.selCat = cat; S.vaultContext = cat;
+      updateVaultIndicator(); updateSaveBtn();
+    });
+    list.appendChild(emptyDiv);
   } else {
     items.forEach((it, i) => {
       const badge = it.type === 'link' ? '🔗' : it.type === 'photo' ? '🖼' : '📝';
+      const pillBg = it.type === 'link' ? 'rgba(91,155,180,0.15)' : it.type === 'photo' ? 'rgba(139,126,200,0.15)' : 'rgba(212,146,46,0.12)';
+      const pillColor = it.type === 'link' ? '#5B9BB4' : it.type === 'photo' ? '#8B7EC8' : 'var(--gold)';
       const card = document.createElement('div');
       card.className = 'vi-card';
       card.style.animationDelay = (i * 40) + 'ms';
       card.innerHTML = `
-        <span class="vi-type-badge">${badge}</span>
+        <span class="vi-type-pill" style="background:${pillBg};color:${pillColor}">${badge}</span>
         <div class="vi-card-body">
           <div class="vi-card-title">${esc(it.title || 'Untitled')}</div>
           <div class="vi-card-meta">
@@ -1980,21 +2056,29 @@ function updateSaveBtn() {
 
 /* ---------- VAULT INDICATOR ---------- */
 function updateVaultIndicator() {
-  const btn = document.getElementById('compose-vault-btn');
+  const btn    = document.getElementById('compose-vault-btn');
+  const ctxEl  = document.getElementById('compose-vault-ctx');
+  const ctxName = document.getElementById('compose-vault-ctx-name');
   if (!btn) return;
   if (S.selCat) {
     const ic = vaultIcon(S.selCat), cl = vaultColor(S.selCat);
     btn.innerHTML = `${ic} ${esc(S.selCat)}`;
     btn.className = 'has-vault';
     btn.style.cssText = `color:${cl};border-color:${cl}66;background:${cl}1a;`;
+    if (ctxEl && ctxName) {
+      ctxName.innerHTML = `<span style="color:${cl}">${ic} ${esc(S.selCat)}</span>`;
+      ctxEl.style.display = 'flex';
+    }
   } else if (S.aiOnline) {
     btn.innerHTML = '✦ AI will choose vault';
     btn.className = '';
     btn.style.cssText = 'color:var(--gold);';
+    if (ctxEl) ctxEl.style.display = 'none';
   } else {
     btn.innerHTML = '📦 Choose Vault';
     btn.className = '';
     btn.style.cssText = '';
+    if (ctxEl) ctxEl.style.display = 'none';
   }
 }
 
@@ -2172,6 +2256,7 @@ async function _finishSave() {
   store();
 
   renderCatFilters();
+  renderList();
   renderVaultGrid();
   renderRecentItems();
   showToast('Saved to ' + category + ' ✓');
@@ -2296,12 +2381,14 @@ function renderRecentItems() {
 
   items.slice(0, 10).forEach((it, i) => {
     const badge = it.type === 'link' ? '🔗' : it.type === 'photo' ? '🖼' : '📝';
+    const pillBg = it.type === 'link' ? 'rgba(91,155,180,0.15)' : it.type === 'photo' ? 'rgba(139,126,200,0.15)' : 'rgba(212,146,46,0.12)';
+    const pillColor = it.type === 'link' ? '#5B9BB4' : it.type === 'photo' ? '#8B7EC8' : 'var(--gold)';
     const color = vaultColor(it.category);
     const el = document.createElement('div');
     el.className = 'recent-item';
     el.style.animationDelay = (i * 28) + 'ms';
     el.innerHTML = `
-      <span class="recent-type-badge">${badge}</span>
+      <span class="recent-type-pill" style="background:${pillBg};color:${pillColor}">${badge}</span>
       <span class="recent-title-txt">${esc(it.title || 'Untitled')}</span>
       <span class="recent-vault-chip" style="color:${color};background:${color}1a;border:1px solid ${color}44;">${esc(it.category)}</span>
       <span class="recent-date">${fmt(it.createdAt)}</span>
@@ -2368,7 +2455,9 @@ function updateOllamaUI() {
 
   dot.className = 'status-dot' + (S.aiOnline ? ' online' : '');
   if (sbDot) sbDot.className = 'status-dot' + (S.aiOnline ? ' online' : '');
-  if (sbTxt) sbTxt.textContent = S.aiOnline ? 'AI ready' : 'AI offline';
+  if (sbTxt) sbTxt.textContent = S.aiOnline ? '✦ AI Active' : 'AI Offline — using local vaults';
+  const sbRow = document.querySelector('.sb-ai-row');
+  if (sbRow) sbRow.classList.toggle('ai-online', S.aiOnline);
   if (chatDot)  chatDot.className  = 'chat-bar-dot' + (S.aiOnline ? ' online' : '');
   if (chatNote) chatNote.textContent = S.aiOnline ? '' : '(offline)';
 
