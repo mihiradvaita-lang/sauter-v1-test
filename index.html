@@ -176,6 +176,7 @@ body.focus-mode .focus-toggle-btn { color: var(--gold); border-color: rgba(212,1
 .item-card:hover::before,
 .item-card.active::before { transform: scaleX(1); }
 
+.ic-pin-dot { font-size: 9px; margin-left: 5px; opacity: 0.6; vertical-align: middle; }
 .ic-title {
   font-size: 13px; font-weight: 500; color: var(--t1);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -221,6 +222,12 @@ body.focus-mode .focus-toggle-btn { color: var(--gold); border-color: rgba(212,1
 .item-card:hover .ic-quick-del { opacity: 1; pointer-events: all; }
 .ic-quick-del:hover { background: rgba(200,60,60,0.25); color: #e05555; transform: scale(1.1); }
 
+.sb-section-hdr {
+  padding: 6px 18px 4px;
+  font-size: 9.5px; font-weight: 600; letter-spacing: 0.1em;
+  color: var(--t4); text-transform: uppercase;
+  flex-shrink: 0;
+}
 .sb-list-meta {
   display: flex; align-items: center; justify-content: space-between;
   padding: 4px 14px 4px 18px; flex-shrink: 0;
@@ -420,6 +427,13 @@ body.focus-mode .focus-toggle-btn { color: var(--gold); border-color: rgba(212,1
   75%  { transform: translateY(-4px)  translateX(-2px); }
   100% { transform: translateY(0px)   translateX(0px); }
 }
+
+.vault-tile-accent {
+  position: absolute; top: 0; left: 0; right: 0;
+  height: 3px; border-radius: 8px 8px 0 0;
+  opacity: 0.7; transition: opacity 220ms var(--eo);
+}
+.vault-tile:hover .vault-tile-accent { opacity: 1; }
 
 .vault-tile-icon {
   width: 26px; height: 26px;
@@ -865,6 +879,25 @@ kbd {
 }
 .vc-emoji-btn:hover { background: var(--s-card); border-color: var(--s-border2); transform: scale(1.08); }
 .vc-emoji-btn.selected { border-color: rgba(212,146,46,0.5); background: rgba(212,146,46,0.08); }
+.vc-color-row {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 16px;
+}
+.vc-color-label { font-size: 11px; color: var(--t4); flex-shrink: 0; min-width: 34px; }
+.vc-color-swatches { display: flex; gap: 7px; flex-wrap: wrap; }
+.vc-swatch {
+  width: 22px; height: 22px; border-radius: 50%;
+  border: 2px solid transparent; padding: 0;
+  cursor: pointer; flex-shrink: 0;
+  transition: transform 140ms var(--eo), border-color 140ms var(--eo);
+  outline: none;
+}
+.vc-swatch:hover { transform: scale(1.2); }
+.vc-swatch.selected {
+  border-color: var(--t1);
+  box-shadow: 0 0 0 2px var(--s-card2);
+  transform: scale(1.15);
+}
 
 /* ===== VIEW: IDLE ===== */
 #v-idle { align-items: center; justify-content: center; gap: 10px; }
@@ -901,6 +934,7 @@ kbd {
 }
 .ollama-pill:hover { border-color: var(--s-border2); color: var(--t3); }
 .ollama-pill.online { border-color: rgba(76,175,118,0.3); cursor: default; }
+.ollama-pill.cors-warn { border-color: rgba(229,168,69,0.45); color: #E5A845; cursor: pointer; }
 
 .status-dot {
   width: 6px; height: 6px; border-radius: 50%;
@@ -909,6 +943,7 @@ kbd {
   flex-shrink: 0;
 }
 .status-dot.online { background: var(--green); }
+.status-dot.cors { background: #E5A845; }
 
 /* Help popover */
 .ai-help-pop {
@@ -2131,6 +2166,21 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
       <button class="vc-emoji-btn" data-emoji="🌙">🌙</button>
       <button class="vc-emoji-btn" data-emoji="🔐">🔐</button>
     </div>
+    <div class="vc-color-row" id="vc-color-row">
+      <div class="vc-color-label">Color</div>
+      <div class="vc-color-swatches" id="vc-color-swatches">
+        <button class="vc-swatch" data-color="#D4922E" style="background:#D4922E"></button>
+        <button class="vc-swatch" data-color="#5B9BB4" style="background:#5B9BB4"></button>
+        <button class="vc-swatch" data-color="#8B7EC8" style="background:#8B7EC8"></button>
+        <button class="vc-swatch" data-color="#4CAF76" style="background:#4CAF76"></button>
+        <button class="vc-swatch" data-color="#C4855A" style="background:#C4855A"></button>
+        <button class="vc-swatch" data-color="#5AAA8C" style="background:#5AAA8C"></button>
+        <button class="vc-swatch" data-color="#C45B5B" style="background:#C45B5B"></button>
+        <button class="vc-swatch" data-color="#C48ABB" style="background:#C48ABB"></button>
+        <button class="vc-swatch" data-color="#7AAEC4" style="background:#7AAEC4"></button>
+        <button class="vc-swatch" data-color="#A4C45B" style="background:#A4C45B"></button>
+      </div>
+    </div>
     <div class="vc-buttons">
       <button id="vc-cancel-btn">Cancel</button>
       <button id="vc-create-btn" disabled>Create Vault</button>
@@ -2307,7 +2357,9 @@ function renderVaultGrid() {
     ].filter(Boolean).join('') : '';
     const lastModAt = vaultItems.reduce((m, it) => Math.max(m, it.updatedAt || it.createdAt || 0), 0);
     const lastModStr = lastModAt ? fmt(lastModAt) : '';
+    tile.style.setProperty('--vault-accent', color);
     tile.innerHTML = `
+      <div class="vault-tile-accent" style="background:${color};"></div>
       ${isCustom ? '<button class="vault-tile-delete" title="Delete vault">×</button>' : ''}
       ${isCustom ? '<button class="vault-tile-rename" title="Rename vault">✎</button>' : ''}
       <button class="vault-tile-add-btn" data-cat="${esc(cat)}" title="Add note to vault">+</button>
@@ -2604,6 +2656,10 @@ function showVaultCreate() {
   const inp = document.getElementById('vc-name-input');
   inp.value = '';
   document.getElementById('vc-create-btn').disabled = true;
+  // Reset emoji selection
+  document.querySelectorAll('.vc-emoji-btn').forEach(b => b.classList.remove('selected'));
+  // Reset color selection to first swatch (gold)
+  document.querySelectorAll('.vc-swatch').forEach((b, i) => b.classList.toggle('selected', i === 0));
   overlay.classList.add('open');
   requestAnimationFrame(() => requestAnimationFrame(() => {
     overlay.classList.add('visible');
@@ -2624,7 +2680,8 @@ function createCustomVault(rawName) {
   const emojiMatch = name.match(/^(\p{Emoji_Presentation}|\p{Emoji}️?)/u);
   const icon = emojiMatch ? emojiMatch[0] : '◎';
   const palette = ['#D4922E','#5B9BB4','#8B7EC8','#4CAF76','#C4855A','#5AAA8C','#C45B5B','#C48ABB','#7AAEC4','#A4C45B'];
-  const color = palette[(S.customVaults.length) % palette.length];
+  const selectedSwatch = document.querySelector('.vc-swatch.selected');
+  const color = selectedSwatch ? selectedSwatch.dataset.color : palette[(S.customVaults.length) % palette.length];
 
   S.customVaults.push({ name, icon, color });
   storeCustomVaults();
@@ -2671,18 +2728,40 @@ function renderList() {
   if (!items.length && S.items.length) { noRes.style.display = 'block'; return; }
   noRes.style.display = 'none';
 
-  items.forEach((it, i) => {
+  // Split pinned vs unpinned — pinned appear first with a section label
+  const pinnedItems   = items.filter(it => it.pinned);
+  const unpinnedItems = items.filter(it => !it.pinned);
+  const hasPinned     = pinnedItems.length > 0;
+  const orderedItems  = [...pinnedItems, ...unpinnedItems];
+
+  let animIdx = 0;
+  orderedItems.forEach((it, i) => {
+    // Insert section header before first pinned item
+    if (hasPinned && i === 0) {
+      const hdr = document.createElement('div');
+      hdr.className = 'sb-section-hdr';
+      hdr.textContent = '📌 Pinned';
+      list.insertBefore(hdr, noRes);
+    }
+    // Insert divider + "All Notes" header between pinned and rest
+    if (hasPinned && i === pinnedItems.length && unpinnedItems.length > 0) {
+      const hdr2 = document.createElement('div');
+      hdr2.className = 'sb-section-hdr';
+      hdr2.textContent = 'All Notes';
+      list.insertBefore(hdr2, noRes);
+    }
+
     const el = document.createElement('div');
-    el.className = 'item-card' + (it.id === S.activeId ? ' active' : '');
+    el.className = 'item-card' + (it.id === S.activeId ? ' active' : '') + (it.pinned ? ' pinned' : '');
     el.dataset.id = it.id;
-    el.style.animationDelay = (i * 38) + 'ms';
+    el.style.animationDelay = (animIdx++ * 38) + 'ms';
     const catC = CAT_COLORS[it.category] || CAT_COLORS.Other;
     el.style.setProperty('--item-accent', catC);
 
     const typePrefix = it.type === 'link' ? '🔗 ' : it.type === 'photo' ? '📷 ' : '';
     const excerpt    = (it.url || it.body || '');
     el.innerHTML = `
-      <div class="ic-title">${typePrefix}${hl(it.title || 'Untitled', S.search)}</div>
+      <div class="ic-title">${typePrefix}${hl(it.title || 'Untitled', S.search)}${it.pinned ? '<span class="ic-pin-dot">📌</span>' : ''}</div>
       <div class="ic-expand">
         <div class="ic-meta">
           <span class="ic-badge" style="${catStyle(it.category)}">${esc(it.category)}</span>
@@ -3417,13 +3496,29 @@ function openEdit(id) {
    OLLAMA / AI
    =========================== */
 async function checkOllama() {
+  // Step 1: Real CORS fetch — if it works, Ollama is truly accessible
   try {
     const ctrl = new AbortController();
-    setTimeout(() => ctrl.abort(), 2000);
-    await fetch(OLLAMA + '/api/tags', { mode: 'no-cors', signal: ctrl.signal });
-    S.aiOnline = true;
-    S._aiCorsBlocked = false;
+    setTimeout(() => ctrl.abort(), 3000);
+    const r = await fetch(OLLAMA + '/api/tags', { signal: ctrl.signal });
+    if (r.ok) {
+      S.aiOnline = true;
+      S._aiCorsBlocked = false;
+      updateOllamaUI();
+      return;
+    }
+  } catch { /* CORS blocked or offline — fall through */ }
+
+  // Step 2: no-cors ping to tell CORS-blocked (running) vs truly offline
+  try {
+    const ctrl2 = new AbortController();
+    setTimeout(() => ctrl2.abort(), 2000);
+    await fetch(OLLAMA, { mode: 'no-cors', signal: ctrl2.signal });
+    // Reachable but CORS not configured → show amber warning
+    S.aiOnline = false;
+    S._aiCorsBlocked = true;
   } catch {
+    // Not reachable at all → truly offline
     S.aiOnline = false;
     S._aiCorsBlocked = false;
   }
@@ -3439,20 +3534,27 @@ function updateOllamaUI() {
   const sbDot   = document.getElementById('sb-status-dot');
   const sbTxt   = document.getElementById('sb-status-txt');
 
-  dot.className = 'status-dot' + (S.aiOnline ? ' online' : '');
-  if (sbDot) sbDot.className = 'status-dot' + (S.aiOnline ? ' online' : '');
-  if (sbTxt) sbTxt.textContent = S.aiOnline ? '✦ AI Active' : 'AI Offline — using local vaults';
+  const dotClass = S.aiOnline ? ' online' : (S._aiCorsBlocked ? ' cors' : '');
+  dot.className = 'status-dot' + dotClass;
+  if (sbDot) sbDot.className = 'status-dot' + dotClass;
+  if (sbTxt) sbTxt.textContent = S.aiOnline ? '✦ AI Active' : (S._aiCorsBlocked ? '⚠ CORS needed' : 'AI Offline — using local vaults');
   const sbRow = document.querySelector('.sb-ai-row');
   if (sbRow) sbRow.classList.toggle('ai-online', S.aiOnline);
-  if (chatDot)  chatDot.className  = 'chat-bar-dot' + (S.aiOnline ? ' online' : '');
-  if (chatNote) chatNote.textContent = S.aiOnline ? '' : '(offline)';
+  if (chatDot)  chatDot.className  = 'chat-bar-dot' + dotClass;
+  if (chatNote) chatNote.textContent = S.aiOnline ? '' : (S._aiCorsBlocked ? '(CORS blocked)' : '(offline)');
 
   if (S.aiOnline) {
     txt.textContent = '✦ AI ready — ' + OLLAMA_MODEL;
     pill.classList.add('online');
-  } else {
-    txt.textContent = S._aiCorsBlocked ? 'AI found — enable CORS' : 'AI offline';
+    pill.classList.remove('cors-warn');
+  } else if (S._aiCorsBlocked) {
+    txt.textContent = 'Ollama found — needs CORS';
     pill.classList.remove('online');
+    pill.classList.add('cors-warn');
+  } else {
+    txt.textContent = 'AI offline';
+    pill.classList.remove('online');
+    pill.classList.remove('cors-warn');
   }
 
   // Refresh compose category row visibility
@@ -4241,7 +4343,9 @@ function wire() {
 
     const reply = S.aiOnline
       ? await aiChatQuery(msg)
-      : 'Ollama is offline. Run:\nOLLAMA_ORIGINS=* ollama serve\nthen pull qwen2.5:0.5b';
+      : S._aiCorsBlocked
+        ? 'Ollama is running but CORS is blocked.\n\nStop Ollama and restart with:\nOLLAMA_ORIGINS=* ollama serve\n\nThen reload this page.'
+        : 'Ollama is offline. Run:\nOLLAMA_ORIGINS=* ollama serve\nthen pull qwen2.5:0.5b';
 
     thinking.remove();
     appendChatMsg('ai', reply);
@@ -4384,6 +4488,13 @@ function wire() {
     vcInput.value = emoji + ' ' + cur;
     vcInput.focus();
     vcCreateBtn.disabled = !vcInput.value.trim();
+  });
+  // Color swatch selection
+  document.getElementById('vc-color-swatches').addEventListener('click', e => {
+    const btn = e.target.closest('.vc-swatch');
+    if (!btn) return;
+    document.querySelectorAll('.vc-swatch').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
   });
 
   /* --- Main screen search --- */
