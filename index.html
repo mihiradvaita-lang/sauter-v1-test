@@ -1175,7 +1175,9 @@ kbd {
 .detail-badge {
   font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
   padding: 4px 12px; border-radius: 20px; font-weight: 600;
+  cursor: pointer; transition: opacity 140ms var(--eo);
 }
+.detail-badge:hover { opacity: 0.72; }
 .detail-date-txt { font-size: 12px; color: var(--t3); }
 
 .detail-read-bar { height: 2px; background: var(--s-border); flex-shrink: 0; }
@@ -3289,8 +3291,11 @@ function openDetail(id) {
 
   S.activeId = id; S.delPending = false;
 
-  document.getElementById('d-badge').textContent   = it.category;
-  document.getElementById('d-badge').style.cssText  = catStyle(it.category);
+  const dBadgeEl = document.getElementById('d-badge');
+  dBadgeEl.textContent  = it.category;
+  dBadgeEl.style.cssText = catStyle(it.category) + ';cursor:pointer;';
+  dBadgeEl.title = `Go to vault: ${it.category}`;
+  dBadgeEl.onclick = () => openVaultInterior(it.category);
   document.getElementById('d-date').textContent    = fmt(it.createdAt);
   document.getElementById('d-title').textContent   = it.title || 'Untitled';
   document.getElementById('d-body').innerHTML      = renderMarkdown(it.body || '');
