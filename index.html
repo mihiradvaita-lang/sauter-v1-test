@@ -1707,12 +1707,12 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
 
       <input id="title-input" type="text" placeholder="Untitled" autocomplete="off" spellcheck="false">
       <div class="fmt-toolbar" id="fmt-toolbar">
-        <button class="fmt-btn" data-fmt="bold" title="Bold"><b>B</b></button>
-        <button class="fmt-btn" data-fmt="italic" title="Italic"><i>I</i></button>
-        <button class="fmt-btn" data-fmt="code" title="Code">&lt;&gt;</button>
+        <button class="fmt-btn" data-fmt="bold" title="Bold (Ctrl+B)"><b>B</b></button>
+        <button class="fmt-btn" data-fmt="italic" title="Italic (Ctrl+I)"><i>I</i></button>
+        <button class="fmt-btn" data-fmt="code" title="Code (Ctrl+E)">&lt;&gt;</button>
         <button class="fmt-btn" data-fmt="strike" title="Strikethrough"><s>S</s></button>
         <div class="fmt-sep"></div>
-        <button class="fmt-btn" data-fmt="link" title="Insert link">&#128279;</button>
+        <button class="fmt-btn" data-fmt="link" title="Insert link (Ctrl+K)">&#128279;</button>
         <button class="fmt-btn" data-fmt="h1" title="Heading 1" style="font-size:11px">H1</button>
         <button class="fmt-btn" data-fmt="h2" title="Heading 2" style="font-size:10px">H2</button>
         <div class="fmt-sep"></div>
@@ -3399,6 +3399,27 @@ function wire() {
     }
   }
   bodyInput.addEventListener('input', updateWordCount);
+
+  // Keyboard shortcuts in compose (Ctrl/Cmd + B/I/K/E)
+  bodyInput.addEventListener('keydown', e => {
+    const mod = e.ctrlKey || e.metaKey;
+    if (!mod) return;
+    const fmtKey = { b: 'bold', i: 'italic', k: 'link', e: 'code' }[e.key.toLowerCase()];
+    if (!fmtKey) return;
+    e.preventDefault();
+    // Fire the same handler as the toolbar buttons
+    document.getElementById('fmt-toolbar').querySelector(`[data-fmt="${fmtKey}"]`)?.click();
+  });
+
+  // Tab key inserts 2 spaces instead of losing focus
+  bodyInput.addEventListener('keydown', e => {
+    if (e.key !== 'Tab') return;
+    e.preventDefault();
+    const start = bodyInput.selectionStart, end = bodyInput.selectionEnd;
+    bodyInput.value = bodyInput.value.substring(0, start) + '  ' + bodyInput.value.substring(end);
+    bodyInput.selectionStart = bodyInput.selectionEnd = start + 2;
+    updateSaveBtn();
+  });
 
   // Paste images from clipboard into body textarea
   document.getElementById('body-input').addEventListener('paste', e => {
