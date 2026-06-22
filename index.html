@@ -487,6 +487,18 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
 }
 .vault-tile:hover .vault-tile-rename { opacity: 1; }
 .vault-tile-rename:hover { background: rgba(212,146,46,0.6); color: #fff; }
+.vault-tile-add-btn {
+  position: absolute; bottom: -6px; right: -6px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: rgba(212,146,46,0.2); border: 1px solid rgba(212,146,46,0.4);
+  color: var(--gold); font-size: 14px; line-height: 18px;
+  text-align: center; cursor: pointer; z-index: 2;
+  opacity: 0; transition: opacity 160ms, background 160ms, transform 140ms;
+  pointer-events: auto;
+}
+.vault-tile:hover .vault-tile-add-btn { opacity: 1; }
+.vault-tile-add-btn:hover { background: rgba(212,146,46,0.35); transform: scale(1.12); }
+.vault-tile-lastmod { font-size: 8.5px; color: var(--t4); margin-top: 2px; }
 
 /* ===== VIEW: VAULT INTERIOR ===== */
 #v-vault { display: flex; flex-direction: column; transform: translateX(30px); }
@@ -2238,14 +2250,18 @@ function renderVaultGrid() {
       linkCount  > 0 ? `<span title="${linkCount} link${linkCount>1?'s':''}">🔗 ${linkCount}</span>`   : '',
       photoCount > 0 ? `<span title="${photoCount} photo${photoCount>1?'s':''}">🖼 ${photoCount}</span>` : '',
     ].filter(Boolean).join('') : '';
+    const lastModAt = vaultItems.reduce((m, it) => Math.max(m, it.updatedAt || it.createdAt || 0), 0);
+    const lastModStr = lastModAt ? fmt(lastModAt) : '';
     tile.innerHTML = `
       ${isCustom ? '<button class="vault-tile-delete" title="Delete vault">×</button>' : ''}
       ${isCustom ? '<button class="vault-tile-rename" title="Rename vault">✎</button>' : ''}
+      <button class="vault-tile-add-btn" data-cat="${esc(cat)}" title="Add note to vault">+</button>
       <div class="vault-tile-icon" style="background:${color}18;color:${color};box-shadow:0 0 14px ${color}26;">${icon}</div>
       <div class="vault-tile-name">${esc(cat)}</div>
       ${previewText ? `<div class="vault-tile-preview">${esc(previewText)}</div>` : ''}
       <div class="vault-tile-count">${count > 0 ? `<span class="vault-tile-count-pill" style="background:${color}22;color:${color};">${count}</span>` : ''}${pinnedCount > 0 ? `<span class="vault-tile-pin-dot" title="${pinnedCount} pinned">📌</span>` : ''}</div>
       ${typeRow ? `<div class="vault-tile-types">${typeRow}</div>` : ''}
+      ${lastModStr ? `<div class="vault-tile-lastmod">${lastModStr}</div>` : ''}
     `;
 
     tile.addEventListener('click', (e) => {
@@ -2257,6 +2273,13 @@ function renderVaultGrid() {
         }
         deleteCustomVault(cat);
         showToast(`"${cat}" deleted`, 'warn');
+        return;
+      }
+      if (e.target.closest('.vault-tile-add-btn')) {
+        e.stopPropagation();
+        S.selCat = cat; S.vaultContext = cat;
+        openCompose();
+        updateVaultIndicator();
         return;
       }
       if (e.target.closest('.vault-tile-rename')) {
