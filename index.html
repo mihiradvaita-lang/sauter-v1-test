@@ -538,6 +538,24 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
 }
 .vault-fab:hover { background: var(--gold2); transform: translateY(-2px) scale(1.06); }
 
+/* ===== VAULT KEYBOARD HINTS ===== */
+.vi-key-hints {
+  position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 14px; align-items: center;
+  pointer-events: none; user-select: none;
+  opacity: 0; transition: opacity 400ms;
+  white-space: nowrap;
+}
+.vault-interior:hover .vi-key-hints { opacity: 1; }
+.vi-key-hints span { font-size: 10px; color: var(--t4); display: flex; align-items: center; gap: 3px; }
+kbd {
+  display: inline-block; padding: 1px 4px;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 3px; font-family: inherit;
+  font-size: 9px; color: var(--t4);
+  line-height: 1.4;
+}
+
 /* ===== VAULT INTERIOR SEARCH ===== */
 .vi-search-bar {
   padding: 10px 40px 6px;
@@ -1739,7 +1757,13 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
         </div>
       </div>
       <div class="vault-interior-list" id="vi-list"></div>
-      <button class="vault-fab" id="vault-fab" title="Add new item">+</button>
+      <button class="vault-fab" id="vault-fab" title="Add new item (+)">+</button>
+      <div class="vi-key-hints">
+        <span><kbd>J</kbd><kbd>K</kbd> navigate</span>
+        <span><kbd>/</kbd> search</span>
+        <span><kbd>N</kbd> new note</span>
+        <span><kbd>Esc</kbd> back</span>
+      </div>
     </div>
 
     <!-- CHAT ASSISTANT -->
