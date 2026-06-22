@@ -636,6 +636,16 @@ kbd {
 .vi-card-pinned { border-left: 2px solid rgba(212,146,46,0.4); }
 .vi-pin-badge { font-size: 10px; margin-right: 4px; }
 
+.vi-export-btn {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+  color: var(--t3); font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  transition: all 160ms var(--eo);
+}
+.vi-export-btn:hover { background: rgba(255,255,255,0.1); color: var(--t1); }
+
 .vi-sort-btn {
   width: 28px; height: 28px; border-radius: 50%;
   background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
@@ -1771,6 +1781,7 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
           All Vaults
         </button>
         <div class="vault-interior-title" id="vi-title"></div>
+        <button class="vi-export-btn" id="vi-export-btn" title="Export vault as Markdown">⬇</button>
         <button class="vi-sort-btn" id="vi-sort-btn" title="Sort order">↕</button>
         <div class="vi-sort-menu" id="vi-sort-menu">
           <div class="vi-sort-opt selected" data-sort="newest">🕐 Newest first</div>
@@ -3091,6 +3102,31 @@ function wire() {
     S.vaultContext = S.openVault;
     updateVaultIndicator();
     updateSaveBtn();
+  });
+
+  /* --- Vault export --- */
+  document.getElementById('vi-export-btn').addEventListener('click', () => {
+    const cat = S.openVault;
+    if (!cat) return;
+    const items = S.items.filter(it => it.category === cat);
+    if (!items.length) { showToast('Nothing to export yet'); return; }
+    const sorted = [...items].sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    const md = `# ${cat} Vault\nExported ${new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}\n\n` +
+      sorted.map(it => {
+        let block = `## ${it.title || 'Untitled'}\n`;
+        if (it.type === 'link' && it.url) block += `🔗 ${it.url}\n`;
+        if (it.body) block += `\n${it.body}\n`;
+        block += `\n_${new Date(it.createdAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}_`;
+        if (it.pinned) block += ' 📌';
+        return block;
+      }).join('\n\n---\n\n');
+    const blob = new Blob([md], { type: 'text/markdown' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `sauter-${cat.toLowerCase().replace(/\s+/g,'-')}-${Date.now()}.md`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast(`Exported ${items.length} note${items.length !== 1 ? 's' : ''} ✓`, 'success');
   });
 
   /* --- Vault sort menu --- */
