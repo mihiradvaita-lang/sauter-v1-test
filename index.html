@@ -1801,7 +1801,7 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
         <div class="sauter-wordmark">
           <span>S</span><span>A</span><span>U</span><span>T</span><span>E</span><span>R</span>
         </div>
-        <div class="empty-tagline">Start capturing — thoughts, reads,<br>ideas that deserve to exist.</div>
+        <div class="empty-tagline" id="home-tagline">Start capturing — thoughts, reads,<br>ideas that deserve to exist.</div>
         <button class="empty-btn" id="empty-new">+ New Note</button>
       </div>
       <div class="vault-section">
@@ -3162,12 +3162,35 @@ function showToast(msg, type) {
   _toastTimer = setTimeout(() => { el.classList.remove('show'); _toastTimer = null; }, 2200);
 }
 
+/* ---------- HOME TAGLINE ---------- */
+function updateHomeTagline() {
+  const el = document.getElementById('home-tagline');
+  if (!el) return;
+  const hour = new Date().getHours();
+  const greeting = hour < 5 ? 'Still up?' : hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : hour < 21 ? 'Good evening' : 'Good night';
+  if (!S.items.length) {
+    el.innerHTML = 'Start capturing — thoughts, reads,<br>ideas that deserve to exist.';
+    return;
+  }
+  const today = new Date(); today.setHours(0,0,0,0);
+  const todayCount = S.items.filter(it => it.createdAt >= today.getTime()).length;
+  const vaultCount = new Set(S.items.map(i => i.category)).size;
+  if (todayCount > 0) {
+    el.innerHTML = `${greeting} — ${todayCount} note${todayCount !== 1 ? 's' : ''} captured today<br>across ${vaultCount} vault${vaultCount !== 1 ? 's' : ''}.`;
+  } else {
+    const totalWords = S.items.reduce((acc, it) => acc + ((it.body||'')+(it.title||'')).split(/\s+/).filter(Boolean).length, 0);
+    el.innerHTML = `${greeting} — ${S.items.length} notes,&nbsp;${totalWords.toLocaleString()} words<br>across ${vaultCount} vault${vaultCount !== 1 ? 's' : ''}.`;
+  }
+}
+
 /* ---------- RECENT ITEMS (main screen) ---------- */
 function renderRecentItems() {
   const list       = document.getElementById('recent-list');
   const clearBtn   = document.getElementById('main-search-clear');
   const viewAllBtn = document.getElementById('recent-view-all');
   if (!list) return;
+
+  updateHomeTagline();
 
   // Draft resume banner
   const draftBanner = document.getElementById('draft-resume-banner');
