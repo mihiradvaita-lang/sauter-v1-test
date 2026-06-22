@@ -693,6 +693,10 @@ kbd {
   font-family: inherit;
 }
 .vi-search-input::placeholder { color: var(--t4); }
+.vi-search-count {
+  font-size: 10px; color: var(--t4); white-space: nowrap; padding-right: 4px;
+  letter-spacing: 0.02em;
+}
 .vi-search-clear {
   width: 16px; height: 16px; border-radius: 50%;
   background: rgba(255,255,255,0.08); border: none;
@@ -2176,6 +2180,7 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
         <div class="vi-search-wrap">
           <svg class="vi-search-icon" width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.5"/><path d="M8.5 8.5L11 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           <input class="vi-search-input" id="vi-search-input" type="text" placeholder="Search in vault…" autocomplete="off">
+          <span class="vi-search-count" id="vi-search-count" style="display:none"></span>
           <button class="vi-search-clear" id="vi-search-clear" style="display:none">✕</button>
         </div>
       </div>
@@ -2726,6 +2731,18 @@ function openVaultInterior(cat) {
       return (b.createdAt || 0) - (a.createdAt || 0); // newest first (default)
     });
 
+    // Update search result count
+    const viCountEl = document.getElementById('vi-search-count');
+    if (viCountEl) {
+      const viQ3 = (S._viSearch || '').trim();
+      if (viQ3) {
+        viCountEl.textContent = sorted.length === 0 ? 'no results' : `${sorted.length} result${sorted.length === 1 ? '' : 's'}`;
+        viCountEl.style.display = 'inline';
+      } else {
+        viCountEl.style.display = 'none';
+      }
+    }
+
     // Add date group headers for newest/oldest sort (not alpha, not when searching)
     let lastGroup = null;
     const getGroup = (ts) => {
@@ -2766,9 +2783,13 @@ function openVaultInterior(cat) {
       const highlightSearch = (str) => {
         const q = (S._viSearch || '').trim();
         if (!q) return esc(str);
-        const idx = str.toLowerCase().indexOf(q.toLowerCase());
-        if (idx === -1) return esc(str);
-        return esc(str.slice(0, idx)) + '<mark class="vi-hl">' + esc(str.slice(idx, idx + q.length)) + '</mark>' + esc(str.slice(idx + q.length));
+        const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+        let result = '', last = 0, m;
+        while ((m = re.exec(str)) !== null) {
+          result += esc(str.slice(last, m.index)) + '<mark class="vi-hl">' + esc(m[0]) + '</mark>';
+          last = m.index + m[0].length;
+        }
+        return (result += esc(str.slice(last))) ? result : esc(str);
       };
       card.innerHTML = `
         <span class="vi-type-pill" style="background:${pillBg};color:${pillColor}">${badge}</span>
