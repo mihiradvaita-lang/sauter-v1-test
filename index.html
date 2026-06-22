@@ -1,0 +1,2360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#D4922E">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="./manifest.json">
+<title>SAUTER</title>
+<style>
+/* ===== RESET ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+button { cursor: pointer; font-family: inherit; }
+
+/* ===== TOKENS ===== */
+:root {
+  --page:    #100E0A;
+  --s-bg:    #0C0A07;
+  --s-s1:    #161209;
+  --s-card:  #231D12;
+  --s-card2: #2C2518;
+  --s-border:  rgba(255,255,255,0.07);
+  --s-border2: rgba(255,255,255,0.13);
+  --page2: #17130E;
+  --s-s2:    #1E190F;
+  --s-card3: #342D1E;
+  --gold:    #D4922E;
+  --gold2:   #E5A845;
+  --gold3:   #B87A20;
+  --gold-glow: rgba(212,146,46,0.18);
+  --gold-dim:  rgba(212,146,46,0.10);
+  --sky:     #5B9BB4;
+  --sky-dim: rgba(91,155,180,0.12);
+  --t1: #F2E8D5;
+  --t2: #C4B394;
+  --t3: #8A7A60;
+  --t4: #4A4030;
+  --green: #4CAF76;
+  --rose:  #C45B5B;
+  --sp: cubic-bezier(0.32,0.72,0,1);
+  --eo: cubic-bezier(0.16,1,0.3,1);
+}
+
+html, body { height: 100%; background: var(--page); color: var(--t1); font-family: system-ui,-apple-system,'Segoe UI',sans-serif; overflow: hidden; }
+
+/* ===== APP SHELL ===== */
+#app { display: flex; height: 100vh; }
+
+/* ===== SIDEBAR ===== */
+#sidebar {
+  width: 290px; min-width: 290px;
+  background: var(--s-bg);
+  border-right: 1px solid var(--s-border);
+  display: flex; flex-direction: column;
+  height: 100vh; position: relative; z-index: 10;
+}
+
+.sb-head {
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid var(--s-border);
+  flex-shrink: 0;
+}
+
+.logo { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; user-select: none; }
+
+.logo-mark {
+  width: 26px; height: 26px;
+  background: var(--gold-dim);
+  border: 1px solid rgba(212,146,46,0.28);
+  border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: var(--gold);
+  letter-spacing: -0.5px; flex-shrink: 0;
+}
+
+.logo-name { font-size: 11px; font-weight: 600; letter-spacing: 0.22em; color: var(--t3); text-transform: uppercase; }
+
+.search-wrap { position: relative; }
+
+.search-ico {
+  position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+  color: var(--t4); font-size: 14px; pointer-events: none;
+  font-style: normal; line-height: 1;
+}
+
+#search-input {
+  width: 100%;
+  background: var(--s-s1);
+  border: 1px solid var(--s-border);
+  border-radius: 8px;
+  padding: 8px 10px 8px 30px;
+  color: var(--t1); font-size: 13px; outline: none;
+  transition: border-color 220ms var(--eo);
+}
+#search-input::placeholder { color: var(--t4); }
+#search-input:focus { border-color: rgba(212,146,46,0.35); }
+
+/* ===== CAT FILTER CHIPS ===== */
+#cat-filters {
+  padding: 10px 18px;
+  display: flex; flex-wrap: wrap; gap: 5px;
+  border-bottom: 1px solid var(--s-border);
+  flex-shrink: 0;
+}
+
+.cat-chip {
+  font-size: 10px; letter-spacing: 0.07em;
+  padding: 3px 9px; border-radius: 20px;
+  border: 1px solid var(--s-border);
+  background: transparent; color: var(--t4);
+  transition: all 200ms var(--eo);
+}
+.cat-chip:hover { color: var(--t2); border-color: var(--s-border2); }
+.cat-chip.active { color: var(--t1); border-color: rgba(212,146,46,0.5); background: var(--gold-dim); }
+
+/* ===== ITEM LIST ===== */
+#item-list { flex: 1; overflow-y: auto; padding: 8px 0; }
+#item-list::-webkit-scrollbar { width: 3px; }
+#item-list::-webkit-scrollbar-thumb { background: var(--t4); border-radius: 2px; }
+
+/* COMPACT CARD — title only by default, expands on hover */
+.item-card {
+  padding: 9px 14px 9px 18px;
+  margin: 2px 8px;
+  border-left: 3px solid transparent;
+  border-radius: 10px;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+  transition: background 200ms var(--eo), box-shadow 200ms var(--eo), padding-bottom 260ms var(--eo);
+  opacity: 0;
+  transform: translateY(10px);
+  animation: card-in 360ms var(--eo) forwards;
+}
+@keyframes card-in { to { opacity: 1; transform: translateY(0); } }
+
+.item-card:hover {
+  background: var(--s-card);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.22);
+  padding-bottom: 12px;
+}
+.item-card.active {
+  background: var(--s-card);
+  padding-bottom: 12px;
+}
+
+.item-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--item-accent, var(--gold));
+  border-radius: 0 2px 2px 0;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 260ms var(--sp);
+}
+.item-card:hover::before,
+.item-card.active::before { transform: scaleX(1); }
+
+.ic-title {
+  font-size: 13px; font-weight: 500; color: var(--t1);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* Expandable preview — hidden by default */
+.ic-expand {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  margin-top: 0;
+  transition: max-height 300ms var(--eo), opacity 240ms var(--eo), margin-top 260ms var(--eo);
+}
+.item-card:hover .ic-expand,
+.item-card.active .ic-expand {
+  max-height: 80px;
+  opacity: 1;
+  margin-top: 6px;
+}
+
+.ic-meta { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+
+.ic-badge {
+  font-size: 9px; letter-spacing: 0.09em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 20px; font-weight: 600; flex-shrink: 0;
+}
+.ic-date { font-size: 11px; color: var(--t4); }
+
+.ic-excerpt {
+  font-size: 12px; color: var(--t3); line-height: 1.5;
+  display: -webkit-box; -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical; overflow: hidden;
+}
+
+.no-results { padding: 40px 18px; text-align: center; font-size: 12px; color: var(--t4); display: none; }
+
+/* ===== SIDEBAR FOOTER ===== */
+.sb-foot {
+  padding: 14px 18px;
+  border-top: 1px solid var(--s-border);
+  flex-shrink: 0;
+}
+
+/* No shimmer — clean button */
+#new-btn {
+  width: 100%; padding: 10px;
+  background: var(--gold-dim);
+  border: 1px solid rgba(212,146,46,0.28);
+  border-radius: 10px;
+  color: var(--gold2); font-size: 13px; font-weight: 500;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: background 220ms var(--eo), transform 220ms var(--sp);
+}
+#new-btn:hover { background: rgba(212,146,46,0.17); transform: translateY(-1px); }
+#new-btn:active { transform: translateY(0); }
+
+/* ===== MAIN ===== */
+#main { flex: 1; position: relative; overflow: hidden; background: var(--page); }
+
+/* ===== VIEWS ===== */
+.view {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column;
+  opacity: 0; pointer-events: none;
+  transition: opacity 280ms var(--eo), transform 280ms var(--eo);
+  transform: translateY(10px);
+}
+.view.active { opacity: 1; pointer-events: all; transform: translateY(0); }
+.view.exit { opacity: 0; transform: translateY(-8px); pointer-events: none; }
+
+/* ===== VIEW: VAULT EMPTY ===== */
+#v-empty {
+  overflow: hidden;
+  /* position: absolute + inset: 0 inherited from .view — creates containing block for canvas */
+}
+
+/* Gravity field canvas — full-area background layer */
+#gravity-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  display: block;
+}
+
+/* Hero: absolute-centered in canvas, above dot field */
+.empty-hero {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -58%);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.empty-hero > * { pointer-events: auto; }
+
+/* Animated SAUTER wordmark */
+.sauter-wordmark {
+  display: flex;
+  margin-bottom: 14px;
+  user-select: none;
+  letter-spacing: -3px;
+}
+
+.sauter-wordmark span {
+  font-size: 58px;
+  font-weight: 700;
+  color: var(--gold);
+  display: inline-block;
+  opacity: 0.07;
+  animation: letter-breathe 3.8s ease-in-out infinite;
+}
+.sauter-wordmark span:nth-child(1) { animation-delay: 0ms; }
+.sauter-wordmark span:nth-child(2) { animation-delay: 130ms; }
+.sauter-wordmark span:nth-child(3) { animation-delay: 260ms; }
+.sauter-wordmark span:nth-child(4) { animation-delay: 390ms; }
+.sauter-wordmark span:nth-child(5) { animation-delay: 520ms; }
+.sauter-wordmark span:nth-child(6) { animation-delay: 650ms; }
+
+@keyframes letter-breathe {
+  0%, 100% { opacity: 0.06; transform: translateY(0px); }
+  40%       { opacity: 0.30; transform: translateY(-7px); }
+  70%       { opacity: 0.10; transform: translateY(-2px); }
+}
+
+.empty-tagline {
+  font-size: 13px; color: var(--t3);
+  font-family: Georgia,'Times New Roman',serif;
+  line-height: 1.65; margin-bottom: 16px;
+  max-width: 260px;
+}
+
+.empty-btn {
+  padding: 9px 22px;
+  background: var(--gold-dim);
+  border: 1px solid rgba(212,146,46,0.28);
+  border-radius: 10px;
+  color: var(--gold2); font-size: 13px; font-weight: 500;
+  transition: all 220ms var(--eo);
+}
+.empty-btn:hover { background: rgba(212,146,46,0.18); transform: translateY(-1px); }
+
+/* Vault section — covers the full canvas, tiles float freely inside */
+.vault-section {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+.vault-section-title { display: none; }
+.vault-grid {
+  display: block;
+  position: absolute;
+  inset: 0;
+}
+
+/* Each tile: absolutely placed at a scatter coordinate */
+.vault-tile {
+  position: absolute;
+  width: 114px;
+  background: var(--s-card);
+  border: 1px solid rgba(212,146,46,0.15);
+  border-radius: 13px;
+  padding: 13px 10px;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 6px;
+  cursor: pointer;
+  pointer-events: auto;
+  opacity: 0;
+  animation: card-in 400ms var(--eo) forwards;
+  transition: background 220ms var(--eo), border-color 220ms var(--eo), box-shadow 220ms var(--eo);
+  will-change: transform;
+  /* Persistent amber halo — tile acts as a warm light source */
+  box-shadow:
+    0 0 0 1px rgba(212,146,46,0.10),
+    0 10px 36px rgba(0,0,0,0.60),
+    0 0  55px rgba(212,146,46,0.20),
+    0 0 110px rgba(212,146,46,0.08);
+}
+
+/* Float once card-in completes */
+.vault-tile.floating {
+  opacity: 1;
+  animation: vault-float var(--float-dur, 3.5s) ease-in-out var(--float-phase, 0s) infinite;
+}
+/* Hover: pause float + intensify glow */
+.vault-tile.floating:hover { animation-play-state: paused; }
+.vault-tile:hover {
+  background: var(--s-card2);
+  border-color: rgba(212,146,46,0.30);
+  box-shadow:
+    0 0 0 1px rgba(212,146,46,0.26),
+    0 10px 36px rgba(0,0,0,0.60),
+    0 0  70px rgba(212,146,46,0.38),
+    0 0 140px rgba(212,146,46,0.16);
+}
+
+/* Size variants — slightly larger for busier vaults */
+.vault-tile[data-size="0"] { padding: 11px 9px; }
+.vault-tile[data-size="1"] { padding: 13px 10px; }
+.vault-tile[data-size="2"] { padding: 15px 10px; width: 122px; }
+.vault-tile[data-size="3"] { padding: 17px 10px; width: 130px; }
+
+/* Organic water float — slight X drift so tiles feel independent */
+@keyframes vault-float {
+  0%   { transform: translateY(0px)   translateX(0px); }
+  25%  { transform: translateY(-5px)  translateX(2px); }
+  50%  { transform: translateY(-9px)  translateX(0px); }
+  75%  { transform: translateY(-4px)  translateX(-2px); }
+  100% { transform: translateY(0px)   translateX(0px); }
+}
+
+.vault-tile-icon {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px;
+}
+
+.vault-tile-name {
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  color: var(--t3);
+  text-align: center;
+  font-weight: 500;
+}
+
+.vault-tile-count {
+  font-size: 9px;
+  color: var(--t4);
+}
+
+/* ===== VIEW: IDLE ===== */
+#v-idle { align-items: center; justify-content: center; gap: 10px; }
+.idle-h { font-size: 14px; color: var(--t3); }
+.idle-p { font-size: 12px; color: var(--t4); letter-spacing: 0.03em; }
+
+/* ===== VIEW: COMPOSE ===== */
+#v-compose { display: flex; flex-direction: column; }
+
+.compose-bar {
+  padding: 14px 40px;
+  border-bottom: 1px solid var(--s-border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.back-btn {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 12px; color: var(--t3);
+  background: none; border: none;
+  transition: color 180ms var(--eo);
+}
+.back-btn:hover { color: var(--t1); }
+
+/* AI status pill */
+.ollama-pill {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 10px; color: var(--t4); letter-spacing: 0.07em;
+  background: var(--s-s1); border: 1px solid var(--s-border);
+  padding: 4px 10px; border-radius: 20px;
+  transition: all 300ms var(--eo);
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+}
+.ollama-pill:hover { border-color: var(--s-border2); color: var(--t3); }
+.ollama-pill.online { border-color: rgba(76,175,118,0.3); cursor: default; }
+
+.status-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--t4);
+  transition: background 400ms var(--eo);
+  flex-shrink: 0;
+}
+.status-dot.online { background: var(--green); }
+
+/* Help popover */
+.ai-help-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--s-card2);
+  border: 1px solid var(--s-border2);
+  border-radius: 12px;
+  padding: 14px 16px;
+  width: 230px;
+  font-size: 11px;
+  color: var(--t2);
+  line-height: 1.65;
+  z-index: 200;
+  pointer-events: all;
+  box-shadow: 0 10px 32px rgba(0,0,0,0.5);
+  display: none;
+}
+.ai-help-pop.show { display: block; }
+.ai-help-pop strong {
+  display: block; font-size: 11.5px; color: var(--t1); margin-bottom: 7px;
+}
+.ai-help-pop code {
+  display: block;
+  background: var(--s-s1);
+  border: 1px solid var(--s-border);
+  border-radius: 7px;
+  padding: 6px 9px; margin: 5px 0;
+  font-size: 10px; color: var(--gold);
+  font-family: 'Menlo','Consolas',monospace;
+  word-break: break-all; line-height: 1.5;
+}
+.ai-retry-btn {
+  margin-top: 10px; width: 100%; padding: 7px;
+  background: var(--gold-dim);
+  border: 1px solid rgba(212,146,46,0.28);
+  border-radius: 8px; color: var(--gold2);
+  font-size: 11px; font-weight: 500;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  transition: background 180ms var(--eo);
+}
+.ai-retry-btn:hover { background: rgba(212,146,46,0.2); }
+
+#title-input {
+  width: 100%;
+  background: transparent; border: none; outline: none;
+  font-size: 28px; font-weight: 600; color: var(--t1);
+  padding: 22px 40px 20px;
+  border-bottom: 1px solid var(--s-border);
+  flex-shrink: 0;
+}
+#title-input::placeholder { color: var(--t4); }
+
+#body-input {
+  flex: 1; width: 100%;
+  background: transparent; border: none; outline: none;
+  font-size: 16px; line-height: 1.78; color: var(--t2);
+  font-family: Georgia,'Times New Roman',serif;
+  padding: 24px 40px; resize: none; overflow-y: auto;
+}
+#body-input::placeholder { color: var(--t4); font-family: inherit; }
+#body-input::-webkit-scrollbar { width: 3px; }
+#body-input::-webkit-scrollbar-thumb { background: var(--t4); border-radius: 2px; }
+
+/* ===== COMPOSE FOOTER ===== */
+.compose-foot {
+  border-top: 1px solid var(--s-border);
+  background: var(--page2);
+  padding: 14px 40px 16px;
+  flex-shrink: 0;
+}
+
+.cat-row {
+  display: flex; align-items: center; flex-wrap: wrap;
+  gap: 6px; margin-bottom: 13px;
+}
+.cat-label-txt {
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--t3); font-weight: 500; margin-right: 2px;
+}
+.cat-sel-btn {
+  font-size: 11px; padding: 4px 11px;
+  border-radius: 20px; border: 1px solid var(--s-border);
+  background: transparent; color: var(--t3);
+  transition: all 180ms var(--eo);
+}
+.cat-sel-btn:hover { color: var(--t2); border-color: var(--s-border2); }
+.cat-sel-btn.selected { color: var(--t1); }
+
+/* AI suggestion */
+#ai-sug {
+  display: none;
+  align-items: center; gap: 8px;
+  font-size: 12px; color: var(--gold);
+  background: var(--gold-dim); border: 1px solid rgba(212,146,46,0.2);
+  border-radius: 20px; padding: 4px 12px;
+}
+#ai-sug.show { display: flex; }
+#ai-sug.thinking { animation: ai-pulse 1.4s ease-in-out infinite; }
+@keyframes ai-pulse { 0%,100% { opacity: 0.45; } 50% { opacity: 1; } }
+
+.ai-accept {
+  background: var(--gold); color: var(--page);
+  border: none; border-radius: 12px;
+  padding: 2px 10px; font-size: 11px; font-weight: 600;
+  transition: background 180ms var(--eo);
+}
+.ai-accept:hover { background: var(--gold2); }
+
+/* Save button — no shimmer */
+#save-btn {
+  width: 100%; padding: 11px;
+  background: var(--gold); border: none; border-radius: 10px;
+  color: var(--page); font-size: 14px; font-weight: 600;
+  transition: background 220ms var(--eo), transform 220ms var(--sp);
+}
+#save-btn:hover:not(:disabled) { background: var(--gold2); transform: translateY(-1px); }
+#save-btn:active:not(:disabled) { transform: translateY(0); }
+#save-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+/* ===== VIEW: DETAIL ===== */
+#v-detail { display: flex; flex-direction: column; }
+
+.detail-bar {
+  padding: 14px 40px;
+  border-bottom: 1px solid var(--s-border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.detail-badge {
+  font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 4px 12px; border-radius: 20px; font-weight: 600;
+}
+.detail-date-txt { font-size: 12px; color: var(--t3); }
+
+.detail-scroll { flex: 1; padding: 32px 40px; overflow-y: auto; }
+.detail-scroll::-webkit-scrollbar { width: 3px; }
+.detail-scroll::-webkit-scrollbar-thumb { background: var(--t4); border-radius: 2px; }
+
+#d-title { font-size: 32px; font-weight: 600; color: var(--t1); line-height: 1.2; margin-bottom: 24px; }
+#d-body {
+  font-size: 16px; line-height: 1.78; color: var(--t2);
+  font-family: Georgia,'Times New Roman',serif;
+  white-space: pre-wrap; word-break: break-word;
+}
+
+.detail-foot {
+  padding: 14px 40px;
+  border-top: 1px solid var(--s-border);
+  background: var(--page2);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.d-saved { font-size: 11px; color: var(--t4); }
+.del-wrap { display: flex; align-items: center; gap: 8px; }
+
+#del-btn {
+  padding: 7px 14px;
+  background: transparent;
+  border: 1px solid rgba(196,91,91,0.28);
+  border-radius: 8px; color: var(--rose); font-size: 12px;
+  transition: all 200ms var(--eo);
+}
+#del-btn:hover { background: rgba(196,91,91,0.1); }
+
+.del-confirm-wrap { display: none; align-items: center; gap: 8px; font-size: 12px; color: var(--t2); }
+.del-confirm-wrap.show { display: flex; }
+
+.del-no {
+  padding: 6px 13px;
+  background: transparent; border: 1px solid var(--s-border);
+  border-radius: 8px; color: var(--t3); font-size: 12px;
+  transition: all 180ms var(--eo);
+}
+.del-no:hover { color: var(--t2); }
+
+.del-yes {
+  padding: 6px 13px;
+  background: var(--rose); border: none;
+  border-radius: 8px; color: #fff; font-size: 12px; font-weight: 600;
+  transition: background 180ms var(--eo);
+}
+.del-yes:hover { background: #d46464; }
+
+/* ===== COMPOSE ATTACH BAR ===== */
+.compose-attach-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 40px 12px;
+}
+.attach-btn {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; color: var(--t3);
+  background: var(--s-s1); border: 1px solid var(--s-border);
+  padding: 5px 12px; border-radius: 20px;
+  transition: all 180ms var(--eo);
+}
+.attach-btn:hover { color: var(--t2); border-color: var(--s-border2); }
+.attach-btn.active { color: var(--gold); border-color: rgba(212,146,46,0.35); background: var(--gold-dim); }
+
+/* Link input row */
+.compose-link-row {
+  display: none;
+  align-items: center; gap: 9px;
+  padding: 0 40px 14px;
+}
+.compose-link-row.show { display: flex; }
+#link-url-input {
+  flex: 1; background: var(--s-s1);
+  border: 1px solid var(--s-border);
+  border-radius: 9px; padding: 8px 13px;
+  font-size: 13px; color: var(--t2); outline: none;
+  transition: border-color 180ms var(--eo);
+}
+#link-url-input:focus { border-color: rgba(212,146,46,0.4); }
+#link-url-input::placeholder { color: var(--t4); }
+
+/* Photo preview */
+.compose-photo-preview {
+  display: none;
+  padding: 0 40px 14px;
+  position: relative; width: fit-content;
+}
+.compose-photo-preview.show { display: block; }
+.compose-photo-preview img {
+  width: 120px; height: 88px;
+  object-fit: cover; border-radius: 10px;
+  border: 1px solid var(--s-border);
+  display: block;
+}
+.compose-photo-remove {
+  position: absolute; top: -3px; left: 157px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(0,0,0,0.72); border: 1px solid var(--s-border2);
+  color: var(--t2); font-size: 10px; line-height: 17px;
+  text-align: center; cursor: pointer;
+  transition: background 160ms;
+}
+.compose-photo-remove:hover { background: rgba(200,60,60,0.85); }
+
+/* ===== FORMATTING TOOLBAR ===== */
+.fmt-toolbar {
+  display: flex; align-items: center; gap: 2px;
+  padding: 6px 40px;
+  border-bottom: 1px solid var(--s-border);
+  flex-shrink: 0;
+}
+.fmt-btn {
+  width: 32px; height: 28px;
+  background: transparent; border: 1px solid transparent;
+  border-radius: 6px; color: var(--t3);
+  font-size: 12px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 160ms var(--eo);
+}
+.fmt-btn:hover { background: var(--s-card); border-color: var(--s-border); color: var(--t1); }
+.fmt-btn:active { background: var(--gold-dim); }
+.fmt-sep { width: 1px; height: 18px; background: var(--s-border); margin: 0 4px; flex-shrink: 0; }
+
+/* ===== COMPOSE DROPZONE ===== */
+.compose-dropzone {
+  margin: 0 40px 12px;
+  border: 1.5px dashed var(--s-border2);
+  border-radius: 12px;
+  padding: 14px;
+  min-height: 60px;
+  cursor: pointer;
+  transition: all 200ms var(--eo);
+  position: relative;
+}
+.compose-dropzone:hover,
+.compose-dropzone.drag-over {
+  border-color: var(--gold);
+  box-shadow: 0 0 20px var(--gold-dim), inset 0 0 20px var(--gold-dim);
+}
+.dropzone-prompt {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  color: var(--t4); font-size: 12px;
+  pointer-events: none;
+}
+.dropzone-icon {
+  width: 22px; height: 22px;
+  border: 1.5px dashed var(--t4);
+  border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 300;
+  transition: all 200ms var(--eo);
+}
+.compose-dropzone:hover .dropzone-icon,
+.compose-dropzone.drag-over .dropzone-icon {
+  border-color: var(--gold); color: var(--gold);
+}
+.dropzone-previews {
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.dropzone-previews:empty { display: none; }
+.dropzone-previews:not(:empty) + .dropzone-prompt { display: none; }
+.dz-item {
+  display: flex; align-items: center; gap: 7px;
+  background: var(--s-s1); border: 1px solid var(--s-border);
+  border-radius: 10px; padding: 5px 8px;
+  font-size: 11px; color: var(--t2);
+  position: relative;
+  animation: card-in 220ms var(--eo) both;
+}
+.dz-item img {
+  width: 48px; height: 48px;
+  object-fit: cover; border-radius: 7px;
+  flex-shrink: 0;
+}
+.dz-link-chip {
+  max-width: 180px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--gold2);
+}
+.dz-file-chip {
+  max-width: 140px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--sky);
+}
+.dz-remove {
+  width: 16px; height: 16px; border-radius: 50%;
+  background: rgba(0,0,0,0.6); border: 1px solid var(--s-border2);
+  color: var(--t2); font-size: 9px; line-height: 15px;
+  text-align: center; cursor: pointer;
+  flex-shrink: 0;
+  transition: background 160ms;
+}
+.dz-remove:hover { background: rgba(200,60,60,0.85); }
+.dz-url-input {
+  width: 100%; margin-top: 6px;
+  background: transparent; border: none; outline: none;
+  font-size: 11px; color: var(--t3); padding: 4px 0;
+}
+.dz-url-input::placeholder { color: var(--t4); }
+
+/* Save btn states */
+#save-btn.saving {
+  opacity: 0.68; cursor: default;
+  background: var(--gold-dim);
+  color: var(--gold2); border: 1px solid rgba(212,146,46,0.3);
+}
+
+/* Cat row — deprecated, replaced by vault picker */
+.cat-row-manual { display: none !important; }
+
+/* ===== VAULT PICKER MODAL ===== */
+.vault-picker-overlay {
+  position: fixed; inset: 0; z-index: 600;
+  background: rgba(6,4,2,0.72);
+  backdrop-filter: blur(6px);
+  display: none; align-items: flex-end; justify-content: center;
+  opacity: 0; transition: opacity 220ms var(--eo);
+}
+.vault-picker-overlay.open  { display: flex; }
+.vault-picker-overlay.visible { opacity: 1; }
+
+.vault-picker-sheet {
+  width: 100%; max-width: 620px;
+  background: var(--s-card2);
+  border: 1px solid var(--s-border2);
+  border-bottom: none;
+  border-radius: 20px 20px 0 0;
+  padding: 24px 26px 38px;
+  transform: translateY(28px);
+  transition: transform 270ms var(--eo);
+}
+.vault-picker-overlay.visible .vault-picker-sheet { transform: translateY(0); }
+
+.vp-handle {
+  width: 36px; height: 4px; background: var(--t4); border-radius: 2px;
+  margin: 0 auto 18px;
+}
+.vp-title { font-size: 15px; font-weight: 600; color: var(--t1); margin-bottom: 4px; }
+.vp-sub   { font-size: 12px; color: var(--t4); margin-bottom: 20px; }
+
+.vp-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 9px;
+  margin-bottom: 16px;
+}
+.vp-tile {
+  display: flex; flex-direction: column; align-items: center; gap: 7px;
+  padding: 13px 8px 11px;
+  background: var(--s-s1); border: 1px solid var(--s-border);
+  border-radius: 13px; cursor: pointer;
+  transition: all 160ms var(--eo);
+}
+.vp-tile:hover {
+  background: var(--s-card); border-color: rgba(212,146,46,0.30);
+  transform: translateY(-2px);
+}
+.vp-tile.current { border-color: rgba(212,146,46,0.50); background: rgba(212,146,46,0.09); }
+.vp-tile-icon {
+  width: 34px; height: 34px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; font-size: 15px;
+}
+.vp-tile-name { font-size: 10px; color: var(--t2); font-weight: 500; text-align: center; }
+
+.vp-footer { display: flex; gap: 8px; }
+.vp-ai-btn {
+  flex: 1; padding: 10px 14px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  background: rgba(212,146,46,0.09); border: 1px solid rgba(212,146,46,0.22);
+  border-radius: 10px; font-size: 12px; color: var(--gold2); font-weight: 500;
+  transition: all 170ms var(--eo);
+}
+.vp-ai-btn:hover { background: rgba(212,146,46,0.16); }
+.vp-cancel-btn {
+  padding: 10px 18px;
+  background: transparent; border: 1px solid var(--s-border);
+  border-radius: 10px; font-size: 12px; color: var(--t3);
+  transition: all 170ms var(--eo);
+}
+.vp-cancel-btn:hover { color: var(--t2); }
+
+/* Move vault button (detail footer) */
+.move-vault-btn {
+  padding: 7px 14px;
+  background: transparent; border: 1px solid var(--s-border);
+  border-radius: 8px; font-size: 12px; color: var(--t3);
+  transition: all 200ms var(--eo);
+  flex-shrink: 0;
+}
+.move-vault-btn:hover { color: var(--gold); border-color: rgba(212,146,46,0.32); }
+
+/* ===== CHAT VIEW ===== */
+#v-chat { display: flex; flex-direction: column; background: var(--page); }
+
+.chat-bar {
+  padding: 14px 40px;
+  border-bottom: 1px solid var(--s-border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-shrink: 0;
+}
+.chat-bar-center {
+  font-size: 13px; font-weight: 600; color: var(--t1);
+  display: flex; align-items: center; gap: 7px;
+}
+.chat-bar-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--t4); transition: background 400ms var(--eo);
+}
+.chat-bar-dot.online { background: var(--green); }
+.chat-offline-note {
+  font-size: 11px; color: var(--t4); font-weight: 400;
+}
+
+.chat-messages {
+  flex: 1; overflow-y: auto;
+  padding: 24px 40px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.chat-messages::-webkit-scrollbar { width: 3px; }
+.chat-messages::-webkit-scrollbar-thumb { background: var(--t4); border-radius: 2px; }
+
+.chat-welcome {
+  text-align: center;
+  padding: 52px 0 20px;
+  color: var(--t4); font-size: 13px; line-height: 1.75;
+}
+.chat-welcome-icon { font-size: 28px; color: var(--gold); opacity: 0.65; margin-bottom: 10px; }
+
+.chat-msg {
+  max-width: 82%;
+  animation: msg-in 260ms var(--eo) both;
+}
+@keyframes msg-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+.chat-msg.user { align-self: flex-end; }
+.chat-msg.ai   { align-self: flex-start; }
+
+.chat-bubble {
+  padding: 10px 14px;
+  font-size: 13px; line-height: 1.68;
+  white-space: pre-wrap; word-break: break-word;
+}
+.chat-msg.user .chat-bubble {
+  background: var(--gold); color: var(--page);
+  border-radius: 14px 14px 2px 14px;
+}
+.chat-msg.ai .chat-bubble {
+  background: var(--s-card); border: 1px solid var(--s-border);
+  color: var(--t2); border-radius: 14px 14px 14px 2px;
+}
+.chat-msg.thinking .chat-bubble { animation: ai-pulse 1.4s ease-in-out infinite; }
+
+.chat-input-wrap {
+  border-top: 1px solid var(--s-border);
+  background: var(--page2);
+  padding: 14px 40px;
+  display: flex; align-items: flex-end; gap: 10px;
+  flex-shrink: 0;
+}
+#chat-input {
+  flex: 1; background: var(--s-s1);
+  border: 1px solid var(--s-border);
+  border-radius: 12px; padding: 10px 14px;
+  font-size: 14px; color: var(--t2); outline: none;
+  resize: none; min-height: 42px; max-height: 120px; overflow-y: auto;
+  line-height: 1.5; font-family: inherit;
+  transition: border-color 180ms var(--eo);
+}
+#chat-input:focus { border-color: rgba(212,146,46,0.4); }
+#chat-input::placeholder { color: var(--t4); }
+#chat-send-btn {
+  width: 38px; height: 38px; flex-shrink: 0; border-radius: 50%;
+  background: var(--gold); border: none;
+  color: var(--page); display: flex; align-items: center; justify-content: center;
+  transition: background 180ms var(--eo), transform 140ms;
+}
+#chat-send-btn:hover:not(:disabled) { background: var(--gold2); transform: scale(1.06); }
+#chat-send-btn:active:not(:disabled) { transform: scale(0.96); }
+#chat-send-btn:disabled { opacity: 0.32; cursor: not-allowed; }
+
+/* Sidebar AI chat button */
+.sb-chat-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; padding: 8px 14px; margin-bottom: 8px;
+  background: transparent; border: 1px solid var(--s-border);
+  border-radius: 9px; font-size: 12px; color: var(--t3);
+  transition: all 180ms var(--eo);
+}
+.sb-chat-btn:hover { color: var(--gold); border-color: rgba(212,146,46,0.3); background: var(--gold-dim); }
+
+/* Link in detail */
+.detail-link-anchor {
+  display: flex; align-items: center; gap: 9px;
+  margin: 0 40px 20px;
+  padding: 10px 14px;
+  background: var(--s-s1); border: 1px solid var(--s-border);
+  border-radius: 10px; text-decoration: none;
+  transition: border-color 180ms var(--eo);
+}
+.detail-link-anchor:hover { border-color: rgba(212,146,46,0.35); }
+.detail-link-url-txt {
+  flex: 1; font-size: 12px; color: var(--gold2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.detail-img-wrap { margin: 0 40px 20px; }
+.detail-img-wrap img { max-width: 100%; border-radius: 12px; border: 1px solid var(--s-border); display: block; }
+
+/* ===== HIGHLIGHT ===== */
+mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; padding: 0 1px; }
+
+/* ===== RIPPLE ===== */
+.rpl {
+  position: fixed; pointer-events: none; z-index: 9999;
+  width: 7px; height: 7px; border-radius: 50%;
+  border: 1.5px solid rgba(212,146,46,0.5);
+  transform: translate(-50%,-50%) scale(1);
+  animation: rpl-out 650ms var(--eo) forwards;
+}
+@keyframes rpl-out {
+  from { transform: translate(-50%,-50%) scale(1); opacity: 0.7; }
+  to   { transform: translate(-50%,-50%) scale(9); opacity: 0; }
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside id="sidebar">
+    <div class="sb-head">
+      <div class="logo">
+        <div class="logo-mark">S</div>
+        <span class="logo-name">SAUTER</span>
+      </div>
+      <div class="search-wrap">
+        <i class="search-ico">&#8981;</i>
+        <input id="search-input" type="text" placeholder="Search your vault…" autocomplete="off" spellcheck="false">
+      </div>
+    </div>
+
+    <div id="cat-filters"></div>
+
+    <div id="item-list">
+      <div class="no-results" id="no-res">Nothing found</div>
+    </div>
+
+    <div class="sb-foot">
+      <button class="sb-chat-btn" id="chat-btn">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+          <path d="M1.5 3C1.5 2.17 2.17 1.5 3 1.5h7c.83 0 1.5.67 1.5 1.5v4c0 .83-.67 1.5-1.5 1.5H7.5L5 11v-2.5H3C2.17 8.5 1.5 7.83 1.5 7V3z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>
+        </svg>
+        Ask AI
+      </button>
+      <button id="new-btn">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+          <path d="M6.5 1.5v10M1.5 6.5h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        New Note
+      </button>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main id="main">
+
+    <!-- VAULT EMPTY — animated SAUTER + vault grid -->
+    <div class="view active" id="v-empty">
+      <canvas id="gravity-canvas"></canvas>
+      <div class="empty-hero">
+        <div class="sauter-wordmark">
+          <span>S</span><span>A</span><span>U</span><span>T</span><span>E</span><span>R</span>
+        </div>
+        <div class="empty-tagline">Start capturing — thoughts, reads,<br>ideas that deserve to exist.</div>
+        <button class="empty-btn" id="empty-new">+ New Note</button>
+      </div>
+      <div class="vault-section">
+        <div class="vault-section-title">Your Vaults</div>
+        <div class="vault-grid" id="vault-grid"></div>
+      </div>
+    </div>
+
+    <!-- IDLE -->
+    <div class="view" id="v-idle">
+      <div class="idle-h">Select a note from the left</div>
+      <div class="idle-p">or press <kbd style="font-size:11px;padding:1px 5px;background:var(--s-card);border:1px solid var(--s-border);border-radius:4px;color:var(--t3);">⌘N</kbd> to create a new one</div>
+    </div>
+
+    <!-- COMPOSE -->
+    <div class="view" id="v-compose">
+      <div class="compose-bar">
+        <button class="back-btn" id="compose-back">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+            <path d="M8 2.5L4 6.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Back
+        </button>
+        <div class="ollama-pill" id="ollama-pill">
+          <div class="status-dot" id="status-dot"></div>
+          <span id="status-txt">Checking AI…</span>
+          <div class="ai-help-pop" id="ai-help-pop">
+            <strong>AI is offline</strong>
+            Start Ollama locally:
+            <code>OLLAMA_ORIGINS=* ollama serve</code>
+            Pull the Qwen model (tiny, fast):
+            <code>ollama pull qwen2.5:0.5b</code>
+            <button class="ai-retry-btn" id="ai-retry-btn">↺ Retry connection</button>
+          </div>
+        </div>
+      </div>
+
+      <input id="title-input" type="text" placeholder="Untitled" autocomplete="off" spellcheck="false">
+      <div class="fmt-toolbar" id="fmt-toolbar">
+        <button class="fmt-btn" data-fmt="bold" title="Bold"><b>B</b></button>
+        <button class="fmt-btn" data-fmt="italic" title="Italic"><i>I</i></button>
+        <button class="fmt-btn" data-fmt="code" title="Code">&lt;&gt;</button>
+        <button class="fmt-btn" data-fmt="strike" title="Strikethrough"><s>S</s></button>
+        <div class="fmt-sep"></div>
+        <button class="fmt-btn" data-fmt="link" title="Insert link">&#128279;</button>
+        <button class="fmt-btn" data-fmt="h1" title="Heading 1" style="font-size:11px">H1</button>
+        <button class="fmt-btn" data-fmt="h2" title="Heading 2" style="font-size:10px">H2</button>
+      </div>
+      <textarea id="body-input" placeholder="Start writing…" spellcheck="true"></textarea>
+
+      <!-- Universal dropzone -->
+      <div class="compose-dropzone" id="compose-dropzone">
+        <div class="dropzone-previews" id="dropzone-previews"></div>
+        <div class="dropzone-prompt" id="dropzone-prompt">
+          <span class="dropzone-icon">+</span>
+          <span>Drop anything here &mdash; image, link, file</span>
+        </div>
+        <input class="dz-url-input" id="dz-url-input" type="text" placeholder="or paste a URL and press Enter" autocomplete="off" spellcheck="false">
+      </div>
+      <input type="file" id="dropzone-file-input" multiple accept="image/*,application/pdf,.pdf,.doc,.docx,.txt,.zip" style="display:none">
+
+      <div class="compose-foot">
+        <button id="save-btn" disabled>Save</button>
+      </div>
+    </div>
+
+    <!-- DETAIL -->
+    <div class="view" id="v-detail">
+      <div class="detail-bar">
+        <button class="back-btn" id="detail-back">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+            <path d="M8 2.5L4 6.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          All Notes
+        </button>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="detail-badge" id="d-badge"></div>
+          <span class="detail-date-txt" id="d-date"></span>
+        </div>
+      </div>
+
+      <div class="detail-scroll">
+        <div id="d-title"></div>
+        <!-- Link bar (shown for link-type items) -->
+        <a class="detail-link-anchor" id="d-link-bar" target="_blank" rel="noopener noreferrer" style="display:none">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="flex-shrink:0;color:var(--gold)">
+            <path d="M6 5H4.5a3 3 0 000 6H6M8 9h1.5a3 3 0 000-6H8M5 7h4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+          <span class="detail-link-url-txt" id="d-link-url"></span>
+          <svg width="11" height="11" viewBox="0 0 11 11" fill="none" style="flex-shrink:0;color:var(--t4)">
+            <path d="M2.5 8.5l6-6M5 2.5h3.5v3.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+        <!-- Image (shown for photo-type items) -->
+        <div class="detail-img-wrap" id="d-img-wrap" style="display:none">
+          <img id="d-img" src="" alt="Attached image">
+        </div>
+        <div id="d-body"></div>
+      </div>
+
+      <div class="detail-foot">
+        <span class="d-saved" id="d-saved"></span>
+        <button class="move-vault-btn" id="move-vault-btn">⤲ Move</button>
+        <div class="del-wrap">
+          <div class="del-confirm-wrap" id="del-confirm">
+            <span>Delete this note?</span>
+            <button class="del-no" id="del-no">Cancel</button>
+            <button class="del-yes" id="del-yes">Delete</button>
+          </div>
+          <button id="del-btn">Delete</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHAT ASSISTANT -->
+    <div class="view" id="v-chat">
+      <div class="chat-bar">
+        <button class="back-btn" id="chat-back">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+            <path d="M8 2.5L4 6.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Back
+        </button>
+        <div class="chat-bar-center">
+          <div class="chat-bar-dot" id="chat-dot"></div>
+          AI Assistant
+          <span class="chat-offline-note" id="chat-offline-note"></span>
+        </div>
+        <div style="width:60px"></div>
+      </div>
+
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-welcome">
+          <div class="chat-welcome-icon">✦</div>
+          Ask me anything about your notes.<br>
+          <span style="color:var(--t4);font-size:12px;">Find things, ask for summaries, explore your vault.</span>
+        </div>
+      </div>
+
+      <div class="chat-input-wrap">
+        <textarea id="chat-input" placeholder="Ask anything about your notes…" rows="1"></textarea>
+        <button id="chat-send-btn" title="Send">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M7 11V3M3.5 6.5L7 3l3.5 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+/* ===========================
+   SAUTER v1
+   =========================== */
+
+const STORE_KEY    = 'sauter_items';
+const OLLAMA       = 'http://localhost:11434';
+const OLLAMA_MODEL = 'qwen2.5:0.5b';          // smallest Qwen — local categorisation + chat
+const MODEL_CHAIN  = [OLLAMA_MODEL, 'qwen2.5', 'qwen2', 'qwen', 'llama3.2', 'phi3'];
+
+const CATS = ['Personal','Work','Reading','Ideas','Goals','Health','Finance','Other'];
+const CAT_COLORS = {
+  Personal: '#D4922E', Work: '#5B9BB4', Reading: '#8B7EC8', Ideas: '#4CAF76',
+  Goals: '#C4855A',   Health: '#5AAA8C', Finance: '#C45B5B', Other: '#8A7A60',
+};
+const CAT_ICONS = {
+  Personal: '✦', Work: '◈', Reading: '◎', Ideas: '◇',
+  Goals: '▲',   Health: '◉', Finance: '◆', Other: '○',
+};
+
+/* ---------- STATE ---------- */
+let S = {
+  items: [], view: 'empty', activeId: null,
+  search: '', catFilter: '', selCat: null,
+  aiOnline: false, aiThinking: false,
+  delPending: false, helpOpen: false,
+  composeAttachments: [],
+};
+
+/* ---------- STORAGE ---------- */
+function load()  { try { return JSON.parse(localStorage.getItem(STORE_KEY) || '[]'); } catch { return []; } }
+function store() { localStorage.setItem(STORE_KEY, JSON.stringify(S.items)); }
+function uid()   { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+/* ---------- TIME ---------- */
+function fmt(iso) {
+  const d = new Date(iso), now = Date.now(), diff = now - d;
+  if (diff < 60000)     return 'Just now';
+  if (diff < 3600000)   return Math.floor(diff/60000) + 'm ago';
+  if (diff < 86400000)  return Math.floor(diff/3600000) + 'h ago';
+  if (diff < 172800000) return 'Yesterday';
+  return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+}
+function fmtLong(iso) {
+  return new Date(iso).toLocaleString('en-US',{month:'long',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit'});
+}
+
+/* ---------- UTILS ---------- */
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function hl(text, q) {
+  if (!q) return esc(text);
+  const safe = q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return esc(text).replace(new RegExp(`(${safe})`, 'gi'), '<mark>$1</mark>');
+}
+function catStyle(cat) {
+  const c = CAT_COLORS[cat] || CAT_COLORS.Other;
+  return `color:${c};background:${c}1a;border:1px solid ${c}44;`;
+}
+
+/* ---------- FILTERED LIST ---------- */
+function filtered() {
+  return S.items.filter(it => {
+    const q = S.search.toLowerCase();
+    const matchQ   = !q
+      || (it.title || '').toLowerCase().includes(q)
+      || (it.body  || '').toLowerCase().includes(q)
+      || (it.url   || '').toLowerCase().includes(q);
+    const matchCat = !S.catFilter || it.category === S.catFilter;
+    return matchQ && matchCat;
+  });
+}
+
+/* ---------- VIEW TRANSITIONS ---------- */
+function gotoView(v) {
+  const prev = document.getElementById('v-' + S.view);
+  const next = document.getElementById('v-' + v);
+  if (prev) { prev.classList.remove('active'); prev.classList.add('exit'); setTimeout(() => prev.classList.remove('exit'), 310); }
+  if (next) { next.classList.remove('exit'); requestAnimationFrame(() => requestAnimationFrame(() => next.classList.add('active'))); }
+  S.view = v;
+  if (v === 'empty') Gravity.start(); else Gravity.stop();
+}
+
+/* ---------- RENDER VAULT GRID ---------- */
+function renderVaultGrid() {
+  const grid = document.getElementById('vault-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+
+  // Scattered positions (% of container) — mirrors Recall free-float layout
+  // Each point is the TOP-LEFT of the tile; chosen to avoid the center hero area
+  const TILE_POS = [
+    { left: '6%',  top: '10%' },  // Personal  — top-left
+    { left: '60%', top: '4%'  },  // Work      — top-right
+    { left: '80%', top: '30%' },  // Reading   — right-mid
+    { left: '68%', top: '63%' },  // Ideas     — bottom-right
+    { left: '37%', top: '74%' },  // Goals     — bottom-center
+    { left: '7%',  top: '60%' },  // Health    — left-lower
+    { left: '4%',  top: '33%' },  // Finance   — left-mid
+    { left: '46%', top: '6%'  },  // Other     — top-center
+  ];
+
+  const floatDurs    = [3.4, 3.1, 3.7, 2.9, 3.6, 3.2, 4.0, 3.5];
+  const emptyPattern = [2, 1, 2, 0, 1, 0, 1, 1];
+
+  CATS.forEach((cat, i) => {
+    const count = S.items.filter(it => it.category === cat).length;
+    const color = CAT_COLORS[cat];
+    const icon  = CAT_ICONS[cat];
+
+    const size = count === 0 ? emptyPattern[i % emptyPattern.length]
+               : count <= 2  ? 1
+               : count <= 6  ? 2
+               : 3;
+
+    const tile = document.createElement('div');
+    tile.className = 'vault-tile';
+    tile.dataset.size = size;
+
+    // Scatter position
+    const pos = TILE_POS[i % TILE_POS.length];
+    tile.style.left = pos.left;
+    tile.style.top  = pos.top;
+
+    tile.style.animationDelay = (i * 60) + 'ms';
+    tile.style.setProperty('--float-dur',   floatDurs[i % floatDurs.length] + 's');
+    tile.style.setProperty('--float-phase', '-' + (i * 0.62).toFixed(2) + 's');
+
+    tile.innerHTML = `
+      <div class="vault-tile-icon" style="background:${color}18;color:${color};">${icon}</div>
+      <div class="vault-tile-name">${esc(cat)}</div>
+      <div class="vault-tile-count">${count > 0 ? count + (count===1?' note':' notes') : '—'}</div>
+    `;
+
+    // Click → ripple on canvas + open compose
+    tile.addEventListener('click', () => {
+      const cv = document.getElementById('gravity-canvas');
+      if (cv) {
+        const r  = cv.getBoundingClientRect();
+        const tr = tile.getBoundingClientRect();
+        Gravity.ripple(
+          (tr.left + tr.width  / 2) - r.left,
+          (tr.top  + tr.height / 2) - r.top
+        );
+      }
+      openCompose();
+      S.selCat = cat; // pre-select vault so Save goes direct
+      updateSaveBtn();
+    });
+
+    grid.appendChild(tile);
+  });
+
+  // After card-in: switch to float + register tile centres with Gravity for dot glow
+  CATS.forEach((_, i) => {
+    setTimeout(() => {
+      const tiles = grid.querySelectorAll('.vault-tile');
+      if (tiles[i]) {
+        tiles[i].style.opacity = '1';
+        tiles[i].classList.add('floating');
+      }
+    }, i * 60 + 440);
+  });
+
+  // Give tiles time to paint then hand their centres to Gravity
+  setTimeout(() => {
+    const cv = document.getElementById('gravity-canvas');
+    if (!cv) return;
+    const cr = cv.getBoundingClientRect();
+    const glows = [...grid.querySelectorAll('.vault-tile')].map(t => {
+      const tr = t.getBoundingClientRect();
+      return { x: (tr.left + tr.width / 2) - cr.left,
+               y: (tr.top + tr.height / 2) - cr.top };
+    });
+    Gravity.setTileGlows(glows);
+  }, 600);
+}
+
+/* ---------- RENDER SIDEBAR LIST ---------- */
+function renderList() {
+  const list  = document.getElementById('item-list');
+  const noRes = document.getElementById('no-res');
+  const items = filtered();
+
+  [...list.children].forEach(c => { if (c !== noRes) c.remove(); });
+
+  if (!items.length && S.items.length) { noRes.style.display = 'block'; return; }
+  noRes.style.display = 'none';
+
+  items.forEach((it, i) => {
+    const el = document.createElement('div');
+    el.className = 'item-card' + (it.id === S.activeId ? ' active' : '');
+    el.dataset.id = it.id;
+    el.style.animationDelay = (i * 38) + 'ms';
+    const catC = CAT_COLORS[it.category] || CAT_COLORS.Other;
+    el.style.setProperty('--item-accent', catC);
+
+    const typePrefix = it.type === 'link' ? '🔗 ' : it.type === 'photo' ? '📷 ' : '';
+    const excerpt    = (it.url || it.body || '');
+    el.innerHTML = `
+      <div class="ic-title">${typePrefix}${hl(it.title || 'Untitled', S.search)}</div>
+      <div class="ic-expand">
+        <div class="ic-meta">
+          <span class="ic-badge" style="${catStyle(it.category)}">${esc(it.category)}</span>
+          <span class="ic-date">${fmt(it.createdAt)}</span>
+        </div>
+        <div class="ic-excerpt">${hl(excerpt.slice(0,115), S.search)}${excerpt.length > 115 ? '&hellip;' : ''}</div>
+      </div>
+    `;
+    el.addEventListener('click', () => openDetail(it.id));
+    list.insertBefore(el, noRes);
+  });
+}
+
+/* ---------- RENDER CAT FILTERS ---------- */
+function renderCatFilters() {
+  const el = document.getElementById('cat-filters');
+  el.innerHTML = '';
+
+  const all = document.createElement('button');
+  all.className = 'cat-chip' + (!S.catFilter ? ' active' : '');
+  all.textContent = 'All';
+  all.addEventListener('click', () => { S.catFilter = ''; renderCatFilters(); renderList(); });
+  el.appendChild(all);
+
+  const used = [...new Set(S.items.map(i => i.category))];
+  used.forEach(cat => {
+    const b = document.createElement('button');
+    b.className = 'cat-chip' + (S.catFilter === cat ? ' active' : '');
+    b.textContent = cat;
+    if (S.catFilter === cat) {
+      const c = CAT_COLORS[cat];
+      b.style.cssText = `color:${c};border-color:${c}60;background:${c}18;`;
+    }
+    b.addEventListener('click', () => { S.catFilter = cat; renderCatFilters(); renderList(); });
+    el.appendChild(b);
+  });
+}
+
+/* ---------- RENDER CAT BUTTONS (compose — shown only when AI offline) ---------- */
+function renderCatBtns() {
+  const row = document.getElementById('cat-row');
+  if (!row) return;
+  [...row.querySelectorAll('.cat-sel-btn')].forEach(b => b.remove());
+
+  // Only show manual category picker when Ollama is offline
+  row.classList.toggle('show', !S.aiOnline);
+
+  if (!S.aiOnline) {
+    CATS.forEach(cat => {
+      const b = document.createElement('button');
+      b.className = 'cat-sel-btn' + (S.selCat === cat ? ' selected' : '');
+      b.textContent = cat;
+      if (S.selCat === cat) {
+        const c = CAT_COLORS[cat];
+        b.style.cssText = `color:${c};border-color:${c}60;background:${c}18;`;
+      }
+      b.addEventListener('click', () => { S.selCat = cat; renderCatBtns(); updateSaveBtn(); });
+      row.appendChild(b);
+    });
+  }
+}
+
+/* ---------- SAVE BUTTON STATE ---------- */
+function updateSaveBtn() {
+  const t = document.getElementById('title-input').value.trim();
+  const b = document.getElementById('body-input').value.trim();
+  const hasAttach = S.composeAttachments.length > 0;
+  document.getElementById('save-btn').disabled = !(t || b || hasAttach);
+}
+
+/* ---------- OPEN COMPOSE ---------- */
+function openCompose() {
+  S.activeId = null; S.selCat = null;
+  S.aiThinking = false; S.delPending = false;
+  S.composeAttachments = [];
+
+  document.getElementById('title-input').value = '';
+  document.getElementById('body-input').value  = '';
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true; btn.textContent = 'Save'; btn.classList.remove('saving');
+
+  // Reset dropzone
+  const dzPreviews = document.getElementById('dropzone-previews');
+  if (dzPreviews) dzPreviews.innerHTML = '';
+  const dzUrlInp = document.getElementById('dz-url-input');
+  if (dzUrlInp) dzUrlInp.value = '';
+
+  renderList();
+  gotoView('compose');
+  setTimeout(() => document.getElementById('title-input').focus(), 340);
+}
+
+/* ---------- VAULT PICKER ---------- */
+let _vpMode = 'save'; // 'save' | 'move'
+
+function showVaultPicker(mode) {
+  _vpMode = mode || 'save';
+  const overlay = document.getElementById('vault-picker-overlay');
+  const titleEl = document.getElementById('vp-title');
+  const subEl   = document.getElementById('vp-sub');
+  const grid    = document.getElementById('vp-grid');
+  const aiBtn   = document.getElementById('vp-ai-btn');
+
+  titleEl.textContent = _vpMode === 'move' ? 'Move to Vault' : 'Choose a Vault';
+  subEl.textContent   = _vpMode === 'move' ? 'Select the vault to move this into:' : 'Where should this be saved?';
+  aiBtn.style.display = (S.aiOnline && _vpMode === 'save') ? 'flex' : 'none';
+
+  grid.innerHTML = '';
+  CATS.forEach(cat => {
+    const color  = CAT_COLORS[cat];
+    const icon   = CAT_ICONS[cat];
+    const tile   = document.createElement('button');
+    tile.className = 'vp-tile';
+    if (_vpMode === 'move') {
+      const cur = S.items.find(i => i.id === S.activeId);
+      if (cur && cur.category === cat) tile.classList.add('current');
+    }
+    tile.innerHTML = `
+      <div class="vp-tile-icon" style="background:${color}18;color:${color};">${icon}</div>
+      <div class="vp-tile-name">${esc(cat)}</div>
+    `;
+    tile.addEventListener('click', () => pickVault(cat));
+    grid.appendChild(tile);
+  });
+
+  overlay.classList.add('open');
+  requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('visible')));
+}
+
+function closeVaultPicker() {
+  const overlay = document.getElementById('vault-picker-overlay');
+  overlay.classList.remove('visible');
+  setTimeout(() => overlay.classList.remove('open'), 270);
+}
+
+async function pickVault(cat) {
+  closeVaultPicker();
+
+  if (_vpMode === 'move') {
+    const it = S.items.find(i => i.id === S.activeId);
+    if (it) {
+      it.category = cat;
+      store();
+      renderCatFilters();
+      renderVaultGrid();
+      openDetail(it.id); // refresh badge
+    }
+    return;
+  }
+
+  S.selCat = cat;
+  await _finishSave();
+}
+
+/* ---------- SAVE NOTE ---------- */
+let _pendingSave = null;
+
+async function saveNote() {
+  const title = document.getElementById('title-input').value.trim();
+  const body  = document.getElementById('body-input').value.trim();
+  const linkAtt = S.composeAttachments.find(a => a.type === 'link');
+  const imgAtt  = S.composeAttachments.find(a => a.type === 'image');
+  const url   = linkAtt ? linkAtt.data.trim() : '';
+  const image = imgAtt  ? imgAtt.data : null;
+  if (!title && !body && !url && !image) return;
+
+  _pendingSave = { title, body, url, image };
+
+  // Vault already chosen (opened from vault tile) or AI will categorise → save straight away
+  if (S.selCat || S.aiOnline) {
+    await _finishSave();
+    return;
+  }
+
+  // AI offline and no pre-selected vault → ask user to choose
+  showVaultPicker('save');
+}
+
+async function _finishSave() {
+  if (!_pendingSave) return;
+  const { title, body, url, image } = _pendingSave;
+  _pendingSave = null;
+
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.classList.add('saving');
+
+  const type = url ? 'link' : image ? 'photo' : 'note';
+
+  // Respect explicit vault choice; AI categorises only when no vault was chosen
+  let category = S.selCat || 'Other';
+  if (S.aiOnline && !S.selCat) {
+    btn.textContent = '✦ Categorising…';
+    category = await aiAutoCategorize(title, body || url || '');
+  }
+
+  const item = {
+    id: uid(), title, body, category, type,
+    ...(url   ? { url }   : {}),
+    ...(image ? { image } : {}),
+    createdAt: new Date().toISOString(),
+  };
+  S.items.unshift(item);
+  store();
+
+  btn.classList.remove('saving');
+  btn.textContent = 'Save';
+  S.composeAttachments = [];
+  S.selCat = null;
+
+  renderCatFilters();
+  renderVaultGrid();
+  openDetail(item.id);
+}
+
+/* ---------- OPEN DETAIL ---------- */
+function openDetail(id) {
+  const it = S.items.find(i => i.id === id);
+  if (!it) return;
+
+  S.activeId = id; S.delPending = false;
+
+  document.getElementById('d-badge').textContent   = it.category;
+  document.getElementById('d-badge').style.cssText  = catStyle(it.category);
+  document.getElementById('d-date').textContent    = fmt(it.createdAt);
+  document.getElementById('d-title').textContent   = it.title || 'Untitled';
+  document.getElementById('d-body').textContent    = it.body || '';
+  document.getElementById('d-saved').textContent   = 'Saved ' + fmtLong(it.createdAt);
+
+  // Link bar
+  const linkBar = document.getElementById('d-link-bar');
+  const linkUrl = document.getElementById('d-link-url');
+  if (linkBar && linkUrl) {
+    if (it.url) {
+      linkBar.href = it.url;
+      linkUrl.textContent = it.url;
+      linkBar.style.display = 'flex';
+    } else {
+      linkBar.style.display = 'none';
+    }
+  }
+
+  // Image
+  const imgWrap = document.getElementById('d-img-wrap');
+  const imgEl   = document.getElementById('d-img');
+  if (imgWrap && imgEl) {
+    if (it.image) { imgEl.src = it.image; imgWrap.style.display = 'block'; }
+    else          { imgWrap.style.display = 'none'; }
+  }
+
+  document.getElementById('del-confirm').classList.remove('show');
+  document.getElementById('del-btn').style.display = '';
+
+  renderList();
+  gotoView('detail');
+}
+
+/* ---------- DELETE ---------- */
+function deleteActive() {
+  S.items = S.items.filter(i => i.id !== S.activeId);
+  store(); S.activeId = null; S.delPending = false;
+  renderCatFilters(); renderList(); renderVaultGrid();
+  gotoView('empty');
+}
+
+/* ===========================
+   OLLAMA / AI
+   =========================== */
+async function checkOllama() {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 3000);
+  try {
+    const r = await fetch(OLLAMA + '/api/tags', { signal: ctrl.signal });
+    clearTimeout(timer);
+    S.aiOnline = r.ok;
+  } catch {
+    clearTimeout(timer);
+    // Probe with no-cors to distinguish "server down" from "CORS blocked"
+    const ctrl2 = new AbortController();
+    const t2 = setTimeout(() => ctrl2.abort(), 2000);
+    try {
+      await fetch(OLLAMA + '/api/tags', { mode: 'no-cors', signal: ctrl2.signal });
+      clearTimeout(t2);
+      S.aiOnline = false;
+      S._aiCorsBlocked = true;
+    } catch {
+      clearTimeout(t2);
+      S.aiOnline = false;
+      S._aiCorsBlocked = false;
+    }
+  }
+  updateOllamaUI();
+}
+
+function updateOllamaUI() {
+  const dot     = document.getElementById('status-dot');
+  const txt     = document.getElementById('status-txt');
+  const pill    = document.getElementById('ollama-pill');
+  const chatDot = document.getElementById('chat-dot');
+  const chatNote= document.getElementById('chat-offline-note');
+
+  dot.className = 'status-dot' + (S.aiOnline ? ' online' : '');
+  if (chatDot)  chatDot.className  = 'chat-bar-dot' + (S.aiOnline ? ' online' : '');
+  if (chatNote) chatNote.textContent = S.aiOnline ? '' : '(offline)';
+
+  if (S.aiOnline) {
+    txt.textContent = '✦ AI ready — ' + OLLAMA_MODEL;
+    pill.classList.add('online');
+  } else {
+    txt.textContent = S._aiCorsBlocked ? 'AI found — enable CORS' : 'AI offline';
+    pill.classList.remove('online');
+  }
+
+  // Refresh compose category row visibility
+  renderCatBtns();
+  updateSaveBtn();
+}
+
+/* --- Auto-categorise on save (returns category string) --- */
+async function aiAutoCategorize(title, content) {
+  const text = [title, content].filter(Boolean).join(' ').slice(0, 600);
+  const prompt =
+    `You are a personal note categoriser. Choose exactly ONE category for the content below.\n` +
+    `Categories: ${CATS.join(', ')}\n\n` +
+    `Content: "${text}"\n\n` +
+    `Reply with ONLY the category name — nothing else.`;
+
+  for (const model of MODEL_CHAIN) {
+    try {
+      const r = await fetch(OLLAMA + '/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, prompt, stream: false, options: { temperature: 0.1, num_predict: 15 } }),
+        signal: AbortSignal.timeout(12000),
+      });
+      if (!r.ok) continue;
+      const d   = await r.json();
+      const raw = (d.response || '').trim();
+      const cat = CATS.find(c => raw.toLowerCase().includes(c.toLowerCase()));
+      if (cat) return cat;
+    } catch { continue; }
+  }
+
+  return S.selCat || 'Other';
+}
+
+/* --- Chat assistant — answers questions about the vault --- */
+async function aiChatQuery(message) {
+  const noteCtx = S.items.slice(0, 50).map((it, i) => {
+    const preview = (it.url || it.body || '').slice(0, 160);
+    return `[${i + 1}] ${it.category} — "${it.title || 'Untitled'}": ${preview}`;
+  }).join('\n') || '(no notes saved yet)';
+
+  const prompt =
+    `You are a helpful assistant for SAUTER, a personal note-taking app. ` +
+    `The user has ${S.items.length} saved items.\n\n` +
+    `Vault contents:\n${noteCtx}\n\n` +
+    `User: ${message}\n\n` +
+    `Answer naturally and concisely. Reference specific notes when relevant. Under 160 words.`;
+
+  for (const model of MODEL_CHAIN) {
+    try {
+      const r = await fetch(OLLAMA + '/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, prompt, stream: false, options: { temperature: 0.35, num_predict: 250 } }),
+        signal: AbortSignal.timeout(20000),
+      });
+      if (!r.ok) continue;
+      const d = await r.json();
+      const resp = (d.response || '').trim();
+      if (resp) return resp;
+    } catch { continue; }
+  }
+
+  return 'AI is not available. Make sure Ollama is running:\nOLLAMA_ORIGINS=* ollama serve';
+}
+
+/* ===========================
+   CLICK RIPPLE
+   =========================== */
+document.addEventListener('click', e => {
+  const r = document.createElement('div');
+  r.className = 'rpl';
+  r.style.left = e.clientX + 'px';
+  r.style.top  = e.clientY + 'px';
+  document.body.appendChild(r);
+  setTimeout(() => r.remove(), 680);
+});
+
+/* ===========================
+   KEYBOARD SHORTCUTS
+   =========================== */
+document.addEventListener('keydown', e => {
+  const ctrl = e.ctrlKey || e.metaKey;
+
+  if (ctrl && e.key === 'n') { e.preventDefault(); openCompose(); return; }
+
+  if (ctrl && e.key === 's' && S.view === 'compose') {
+    e.preventDefault();
+    if (!document.getElementById('save-btn').disabled) saveNote();
+    return;
+  }
+
+  if (e.key === 'Escape') {
+    if (S.helpOpen) {
+      S.helpOpen = false;
+      document.getElementById('ai-help-pop').classList.remove('show');
+      return;
+    }
+    if (S.delPending) {
+      S.delPending = false;
+      document.getElementById('del-confirm').classList.remove('show');
+      document.getElementById('del-btn').style.display = '';
+      return;
+    }
+    if (S.view === 'compose' || S.view === 'detail') {
+      S.activeId = null; renderList();
+      gotoView('empty');
+    }
+  }
+});
+
+/* ---------- DROPZONE HELPERS ---------- */
+function addAttachment(type, data, name) {
+  if (S.composeAttachments.length >= 3) return;
+  S.composeAttachments.push({ type, data, name: name || '' });
+  renderDropzonePreviews();
+  updateSaveBtn();
+}
+
+function removeAttachment(index) {
+  S.composeAttachments.splice(index, 1);
+  renderDropzonePreviews();
+  updateSaveBtn();
+}
+
+function renderDropzonePreviews() {
+  const dp = document.getElementById('dropzone-previews');
+  if (!dp) return;
+  dp.innerHTML = '';
+  S.composeAttachments.forEach((att, i) => {
+    const el = document.createElement('div');
+    el.className = 'dz-item';
+    if (att.type === 'image') {
+      el.innerHTML = `<img src="${att.data}" alt="${esc(att.name)}"><span class="dz-file-chip">${esc(att.name || 'Image')}</span><button class="dz-remove" data-idx="${i}">×</button>`;
+    } else if (att.type === 'link') {
+      el.innerHTML = `<span style="font-size:14px">🔗</span><span class="dz-link-chip">${esc(att.data)}</span><button class="dz-remove" data-idx="${i}">×</button>`;
+    } else {
+      el.innerHTML = `<span style="font-size:14px">📎</span><span class="dz-file-chip">${esc(att.name || 'File')}</span><button class="dz-remove" data-idx="${i}">×</button>`;
+    }
+    dp.appendChild(el);
+  });
+}
+
+function processDropFile(file) {
+  if (!file || S.composeAttachments.length >= 3) return;
+  if (file.type.startsWith('image/')) {
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 800;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+          else       { w = Math.round(w * MAX / h); h = MAX; }
+        }
+        const cvs = document.createElement('canvas');
+        cvs.width = w; cvs.height = h;
+        cvs.getContext('2d').drawImage(img, 0, 0, w, h);
+        addAttachment('image', cvs.toDataURL('image/jpeg', 0.72), file.name);
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  } else {
+    const reader = new FileReader();
+    reader.onload = ev => addAttachment('file', ev.target.result, file.name);
+    reader.readAsDataURL(file);
+  }
+}
+
+/* ===========================
+   WIRE UP EVENTS
+   =========================== */
+function wire() {
+  document.getElementById('new-btn').addEventListener('click', openCompose);
+  document.getElementById('empty-new').addEventListener('click', openCompose);
+
+  document.getElementById('compose-back').addEventListener('click', () => {
+    S.activeId = null; renderList();
+    gotoView('empty');
+  });
+  document.getElementById('detail-back').addEventListener('click', () => {
+    S.activeId = null; renderList();
+    gotoView('empty');
+  });
+
+  document.getElementById('save-btn').addEventListener('click', saveNote);
+
+  document.getElementById('search-input').addEventListener('input', e => {
+    S.search = e.target.value; renderList();
+  });
+
+  const titleI = document.getElementById('title-input');
+  const bodyI  = document.getElementById('body-input');
+  titleI.addEventListener('input', updateSaveBtn);
+  bodyI.addEventListener('input',  updateSaveBtn);
+
+  /* --- Formatting toolbar --- */
+  document.getElementById('fmt-toolbar').addEventListener('click', e => {
+    const btn = e.target.closest('[data-fmt]');
+    if (!btn) return;
+    const fmt = btn.dataset.fmt;
+    const ta = document.getElementById('body-input');
+    const start = ta.selectionStart, end = ta.selectionEnd;
+    const sel = ta.value.substring(start, end);
+    let before = '', after = '', insert = '';
+
+    switch (fmt) {
+      case 'bold':   before = '**'; after = '**'; break;
+      case 'italic': before = '*';  after = '*';  break;
+      case 'code':   before = '`';  after = '`';  break;
+      case 'strike': before = '~~'; after = '~~'; break;
+      case 'link': {
+        const url = prompt('Enter URL:');
+        if (!url) return;
+        if (sel) { before = '['; after = `](${url})`; }
+        else     { insert = url; }
+        break;
+      }
+      case 'h1': case 'h2': {
+        const pre = fmt === 'h1' ? '# ' : '## ';
+        const ls = ta.value.lastIndexOf('\n', start - 1) + 1;
+        const le = ta.value.indexOf('\n', start);
+        const lineEnd = le === -1 ? ta.value.length : le;
+        const line = ta.value.substring(ls, lineEnd);
+        const stripped = line.replace(/^#{1,2}\s*/, '');
+        const already = (fmt === 'h1' && line.startsWith('# ') && !line.startsWith('## '))
+                     || (fmt === 'h2' && line.startsWith('## '));
+        const newLine = already ? stripped : pre + stripped;
+        ta.value = ta.value.substring(0, ls) + newLine + ta.value.substring(lineEnd);
+        ta.selectionStart = ta.selectionEnd = ls + newLine.length;
+        ta.focus(); updateSaveBtn();
+        return;
+      }
+    }
+
+    if (insert) {
+      ta.value = ta.value.substring(0, start) + insert + ta.value.substring(end);
+      ta.selectionStart = ta.selectionEnd = start + insert.length;
+    } else if (sel) {
+      ta.value = ta.value.substring(0, start) + before + sel + after + ta.value.substring(end);
+      ta.selectionStart = start + before.length;
+      ta.selectionEnd = start + before.length + sel.length;
+    } else {
+      ta.value = ta.value.substring(0, start) + before + after + ta.value.substring(end);
+      ta.selectionStart = ta.selectionEnd = start + before.length;
+    }
+    ta.focus(); updateSaveBtn();
+  });
+
+  /* --- Universal dropzone --- */
+  const dropzone   = document.getElementById('compose-dropzone');
+  const dzFileInp  = document.getElementById('dropzone-file-input');
+  const dzUrlInput = document.getElementById('dz-url-input');
+
+  // Remove buttons on previews
+  document.getElementById('dropzone-previews').addEventListener('click', e => {
+    const rm = e.target.closest('.dz-remove');
+    if (rm) { e.stopPropagation(); removeAttachment(parseInt(rm.dataset.idx)); }
+  });
+
+  // Click to browse files
+  dropzone.addEventListener('click', e => {
+    if (e.target.closest('.dz-remove') || e.target.closest('.dz-url-input') || e.target.id === 'dz-url-input') return;
+    dzFileInp.click();
+  });
+
+  dzFileInp.addEventListener('change', () => {
+    [...dzFileInp.files].forEach(f => processDropFile(f));
+    dzFileInp.value = '';
+  });
+
+  // Drag and drop
+  dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+  dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('drag-over');
+    const text = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('text/uri-list');
+    if (text && /^https?:\/\//i.test(text.trim())) {
+      addAttachment('link', text.trim(), text.trim());
+      return;
+    }
+    [...e.dataTransfer.files].forEach(f => processDropFile(f));
+  });
+
+  // URL input inside dropzone
+  dzUrlInput.addEventListener('click', e => e.stopPropagation());
+  dzUrlInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const url = dzUrlInput.value.trim();
+      if (url) {
+        const full = /^https?:\/\//i.test(url) ? url : 'https://' + url;
+        addAttachment('link', full, full);
+        dzUrlInput.value = '';
+      }
+    }
+  });
+
+  // Paste images from clipboard into body textarea
+  document.getElementById('body-input').addEventListener('paste', e => {
+    const items = [...(e.clipboardData || {}).items || []];
+    const imgItem = items.find(it => it.type.startsWith('image/'));
+    if (imgItem) {
+      e.preventDefault();
+      processDropFile(imgItem.getAsFile());
+    }
+  });
+
+  /* --- Chat assistant --- */
+  document.getElementById('chat-btn').addEventListener('click', () => {
+    gotoView('chat');
+    const chatDot  = document.getElementById('chat-dot');
+    const chatNote = document.getElementById('chat-offline-note');
+    if (chatDot)  chatDot.className  = 'chat-bar-dot' + (S.aiOnline ? ' online' : '');
+    if (chatNote) chatNote.textContent = S.aiOnline ? '' : '(offline)';
+    setTimeout(() => document.getElementById('chat-input').focus(), 360);
+  });
+  document.getElementById('chat-back').addEventListener('click', () => {
+    gotoView('empty');
+  });
+
+  const chatInp  = document.getElementById('chat-input');
+  const chatSend = document.getElementById('chat-send-btn');
+
+  function appendChatMsg(role, text, thinking = false) {
+    const msgs = document.getElementById('chat-messages');
+    const wrap = document.createElement('div');
+    wrap.className = 'chat-msg ' + role + (thinking ? ' thinking' : '');
+    const bub = document.createElement('div');
+    bub.className = 'chat-bubble';
+    bub.textContent = text;
+    wrap.appendChild(bub);
+    msgs.appendChild(wrap);
+    msgs.scrollTop = msgs.scrollHeight;
+    return wrap;
+  }
+
+  async function sendChat() {
+    const msg = chatInp.value.trim();
+    if (!msg) return;
+    chatInp.value = '';
+    chatInp.style.height = '';
+
+    appendChatMsg('user', msg);
+    const thinking = appendChatMsg('ai', '✦ Thinking…', true);
+    chatSend.disabled = true;
+
+    const reply = S.aiOnline
+      ? await aiChatQuery(msg)
+      : 'Ollama is offline. Run:\nOLLAMA_ORIGINS=* ollama serve\nthen pull qwen2.5:0.5b';
+
+    thinking.remove();
+    appendChatMsg('ai', reply);
+    chatSend.disabled = false;
+    document.getElementById('chat-messages').scrollTop = 99999;
+  }
+
+  chatSend.addEventListener('click', sendChat);
+  chatInp.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+  });
+  chatInp.addEventListener('input', () => {
+    chatInp.style.height = 'auto';
+    chatInp.style.height = Math.min(chatInp.scrollHeight, 120) + 'px';
+  });
+
+  /* Ollama pill — click when offline shows help */
+  const pill = document.getElementById('ollama-pill');
+  const pop  = document.getElementById('ai-help-pop');
+  pill.addEventListener('click', e => {
+    if (S.aiOnline) return;
+    e.stopPropagation();
+    S.helpOpen = !S.helpOpen;
+    pop.classList.toggle('show', S.helpOpen);
+  });
+  document.addEventListener('click', () => {
+    if (S.helpOpen) { S.helpOpen = false; pop.classList.remove('show'); }
+  });
+
+  document.getElementById('ai-retry-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    S.helpOpen = false; pop.classList.remove('show');
+    document.getElementById('status-txt').textContent = 'Retrying…';
+    checkOllama();
+  });
+
+  document.getElementById('del-btn').addEventListener('click', () => {
+    S.delPending = true;
+    document.getElementById('del-confirm').classList.add('show');
+    document.getElementById('del-btn').style.display = 'none';
+  });
+  document.getElementById('del-no').addEventListener('click', () => {
+    S.delPending = false;
+    document.getElementById('del-confirm').classList.remove('show');
+    document.getElementById('del-btn').style.display = '';
+  });
+  document.getElementById('del-yes').addEventListener('click', deleteActive);
+
+  /* --- Move vault button --- */
+  document.getElementById('move-vault-btn').addEventListener('click', () => {
+    showVaultPicker('move');
+  });
+
+  /* --- Vault picker overlay --- */
+  document.getElementById('vp-cancel-btn').addEventListener('click', closeVaultPicker);
+  document.getElementById('vp-ai-btn').addEventListener('click', async () => {
+    closeVaultPicker();
+    S.selCat = null; // no explicit choice → let AI decide
+    await _finishSave();
+  });
+  document.getElementById('vault-picker-overlay').addEventListener('click', e => {
+    if (e.target.id === 'vault-picker-overlay') closeVaultPicker();
+  });
+}
+
+/* ===========================
+   GRAVITY FIELD — DOT FIELD
+   (reference: Recall_Gravity_Grid_Web.html)
+   =========================== */
+const Gravity = (() => {
+  let canvas, ctx, animId, running = false, t = 0;
+  const mouse = { x: null, y: null };
+
+  const GOLD      = '212,146,46'; // --gold: #D4922E
+  const SPACING   = 75;           // px between dot grid nodes
+  const BASE_R    = 2.0;          // resting dot radius
+  const BASE_A    = 0.11;         // resting dot alpha (dimmed)
+  const ripples   = [];           // { x, y, r, life }
+  const tileGlows = [];           // { x, y } — vault tile centres as light sources
+
+  function setup() {
+    canvas = document.getElementById('gravity-canvas');
+    if (!canvas) return;
+    ctx = canvas.getContext('2d');
+    const view = document.getElementById('v-empty');
+    view.addEventListener('mousemove', e => {
+      const r = canvas.getBoundingClientRect();
+      mouse.x = e.clientX - r.left;
+      mouse.y = e.clientY - r.top;
+    });
+    view.addEventListener('mouseleave', () => { mouse.x = null; mouse.y = null; });
+    window.addEventListener('resize', resize);
+    resize();
+  }
+
+  function resize() {
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.offsetWidth, H = canvas.offsetHeight;
+    canvas.width  = W * dpr;
+    canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function frame() {
+    if (!running || !canvas) return;
+    const W = canvas.offsetWidth, H = canvas.offsetHeight;
+    ctx.clearRect(0, 0, W, H);
+
+    const tt       = t * 0.0004;
+    const hasMouse = mouse.x !== null;
+
+    /* Gravity well: cursor when active, centred + breathing when idle */
+    const breathe = hasMouse ? 1.0 : (0.75 + Math.sin(tt * 1.8) * 0.25);
+    const cx = hasMouse ? mouse.x : W / 2;
+    const cy = hasMouse ? mouse.y : H / 2;
+
+    /* Radial glow at gravity well — dimmed */
+    const glowR = Math.max(W, H) * 0.40 * breathe;
+    const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, glowR);
+    grd.addColorStop(0,   `rgba(${GOLD},${hasMouse ? 0.08 : 0.055 * breathe})`);
+    grd.addColorStop(0.4, `rgba(${GOLD},${hasMouse ? 0.025 : 0.015 * breathe})`);
+    grd.addColorStop(1,   `rgba(${GOLD},0)`);
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, W, H);
+
+    /* Per-tile warm halo — each vault tile glows on the canvas background */
+    for (const tg of tileGlows) {
+      const hG = ctx.createRadialGradient(tg.x, tg.y, 0, tg.x, tg.y, 130);
+      hG.addColorStop(0,   `rgba(${GOLD},0.13)`);
+      hG.addColorStop(0.45,`rgba(${GOLD},0.04)`);
+      hG.addColorStop(1,   `rgba(${GOLD},0)`);
+      ctx.fillStyle = hG;
+      ctx.fillRect(0, 0, W, H);
+    }
+
+    /* Advance ripples */
+    for (let ri = ripples.length - 1; ri >= 0; ri--) {
+      ripples[ri].r    += 5.5;
+      ripples[ri].life -= 0.022;
+      if (ripples[ri].life <= 0) ripples.splice(ri, 1);
+    }
+
+    /* Dot grid */
+    const cols = Math.ceil(W / SPACING) + 1;
+    const rows = Math.ceil(H / SPACING) + 1;
+    const ox   = (W % SPACING) / 2;
+    const oy   = (H % SPACING) / 2;
+
+    for (let gi = 0; gi < cols; gi++) {
+      for (let gj = 0; gj < rows; gj++) {
+        const bx = ox + gi * SPACING;
+        const by = oy + gj * SPACING;
+
+        /* Distance from gravity well */
+        const ex = bx - cx, ey = by - cy;
+        const d  = Math.sqrt(ex * ex + ey * ey) || 0.001;
+
+        /* Gravity displacement toward well */
+        let px = bx, py = by;
+        if (hasMouse) {
+          const G  = 9000, soft = 55;
+          const d2 = ex * ex + ey * ey;
+          const pull = Math.min(G / (d2 + soft * soft), 28);
+          px = bx - (ex / d) * pull;
+          py = by - (ey / d) * pull;
+        }
+
+        /* Gentle ambient drift */
+        py += Math.sin(tt + gi * 0.42 + gj * 0.37) * 1.4;
+
+        /* Proximity 0→1 within influence radius */
+        const influence = hasMouse ? 260 : Math.min(W, H) * 0.48 * breathe;
+        const prox = Math.max(0, 1 - d / influence);
+
+        /* Ripple boost — brightens dots as ring passes over them */
+        let ripBoost = 0;
+        for (const rp of ripples) {
+          const rdx = px - rp.x, rdy = py - rp.y;
+          const ringDist = Math.abs(Math.sqrt(rdx * rdx + rdy * rdy) - rp.r);
+          if (ringDist < 28) {
+            ripBoost += (1 - ringDist / 28) * rp.life * 0.7;
+          }
+        }
+
+        /* Tile glow boost — dots near vault tile centres glow brighter */
+        let tileBoost = 0;
+        for (const tg of tileGlows) {
+          const tdx = px - tg.x, tdy = py - tg.y;
+          const tDist = Math.sqrt(tdx * tdx + tdy * tdy);
+          if (tDist < 155) {
+            const f = 1 - tDist / 155;
+            tileBoost += f * f * 0.90;
+          }
+        }
+
+        /* Dot grows and brightens near well + ripple + tile glow */
+        const r     = BASE_R + prox * 3.5 + ripBoost * 3.0 + tileBoost * 3.8;
+        const alpha = Math.min(BASE_A + prox * 0.52 + ripBoost * 0.55 + tileBoost * 0.42, 0.90);
+
+        ctx.beginPath();
+        ctx.arc(px, py, r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${GOLD},${alpha.toFixed(3)})`;
+        ctx.fill();
+      }
+    }
+
+    t++;
+    animId = requestAnimationFrame(frame);
+  }
+
+  return {
+    start() {
+      if (running) return;
+      if (!canvas) setup();
+      running = true;
+      resize();
+      frame();
+    },
+    stop() {
+      running = false;
+      if (animId) { cancelAnimationFrame(animId); animId = null; }
+    },
+    ripple(x, y) {
+      ripples.push({ x, y, r: 0, life: 1.0 });
+    },
+    setTileGlows(positions) {
+      tileGlows.length = 0;
+      for (const p of positions) tileGlows.push({ x: p.x, y: p.y });
+    }
+  };
+})();
+
+/* ===========================
+   INIT
+   =========================== */
+function init() {
+  S.items = load();
+  wire();
+  renderCatFilters();
+  renderList();
+  renderVaultGrid();
+
+  gotoView('empty');
+
+  checkOllama();
+  setInterval(checkOllama, 30000);
+
+  // Handle Web Share Target (GET-based) — fills compose from ?title=&text=&url=
+  const params     = new URLSearchParams(location.search);
+  const shareTitle = params.get('title') || '';
+  const shareText  = params.get('text')  || '';
+  const shareUrl   = params.get('url')   || '';
+  if (shareTitle || shareText || shareUrl) {
+    openCompose();
+    if (shareTitle) document.getElementById('title-input').value = shareTitle;
+    if (shareText)  document.getElementById('body-input').value  = shareText;
+    if (shareUrl) {
+      S.composeAttachments.push({ type: 'link', data: shareUrl, name: shareUrl });
+      renderDropzonePreviews();
+    }
+    updateSaveBtn();
+    // Remove share params from URL without reload
+    history.replaceState({}, '', location.pathname);
+  }
+
+  // Register service worker for PWA / share target
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+}
+
+init();
+</script>
+
+<!-- VAULT PICKER MODAL -->
+<div class="vault-picker-overlay" id="vault-picker-overlay">
+  <div class="vault-picker-sheet">
+    <div class="vp-handle"></div>
+    <div class="vp-title" id="vp-title">Choose a Vault</div>
+    <div class="vp-sub"   id="vp-sub">Where should this be saved?</div>
+    <div class="vp-grid"  id="vp-grid"></div>
+    <div class="vp-footer">
+      <button class="vp-ai-btn"     id="vp-ai-btn">✦ Let AI decide</button>
+      <button class="vp-cancel-btn" id="vp-cancel-btn">Cancel</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
