@@ -1738,7 +1738,7 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
           <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
             <path d="M8 2.5L4 6.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
-          All Notes
+          <span id="detail-back-label">All Notes</span>
         </button>
         <div style="display:flex;align-items:center;gap:12px;">
           <div class="detail-badge" id="d-badge"></div>
@@ -2665,6 +2665,12 @@ function openDetail(id) {
   if (imgWrap && imgEl) {
     if (it.image) { imgEl.src = it.image; imgWrap.style.display = 'block'; }
     else          { imgWrap.style.display = 'none'; }
+  }
+
+  // Update back button label based on vault context
+  const backLabel = document.getElementById('detail-back-label');
+  if (backLabel) {
+    backLabel.textContent = S.vaultContext ? S.vaultContext : 'All Notes';
   }
 
   document.getElementById('del-confirm').classList.remove('show');
