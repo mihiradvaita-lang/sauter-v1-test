@@ -531,6 +531,36 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
 }
 .vault-fab:hover { background: var(--gold2); transform: translateY(-2px) scale(1.06); }
 
+.vi-ai-btn {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(212,146,46,0.1); border: 1px solid rgba(212,146,46,0.2);
+  color: var(--gold); font-size: 12px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  transition: all 160ms var(--eo);
+}
+.vi-ai-btn:hover { background: rgba(212,146,46,0.2); transform: scale(1.1); }
+.vi-ai-btn.thinking { animation: pulse-ring 1.2s infinite; }
+@keyframes pulse-ring {
+  0%,100% { box-shadow: 0 0 0 0 rgba(212,146,46,0.4); }
+  50% { box-shadow: 0 0 0 5px rgba(212,146,46,0); }
+}
+.vi-ai-summary {
+  margin: 0 40px 0;
+  padding: 12px 16px;
+  background: rgba(212,146,46,0.06);
+  border: 1px solid rgba(212,146,46,0.15);
+  border-radius: 10px;
+  font-size: 12px; color: var(--t2); line-height: 1.5;
+  animation: card-in 300ms var(--eo) forwards;
+}
+.vi-ai-summary-close {
+  float: right; cursor: pointer; color: var(--t4); font-size: 11px;
+  margin-left: 8px; padding: 0 4px;
+  transition: color 140ms;
+}
+.vi-ai-summary-close:hover { color: var(--t2); }
+
 /* ===== VAULT CREATE MODAL ===== */
 .vault-create-overlay {
   position: fixed; inset: 0; z-index: 600;
@@ -1604,7 +1634,9 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
           All Vaults
         </button>
         <div class="vault-interior-title" id="vi-title"></div>
+        <button class="vi-ai-btn" id="vi-ai-btn" title="✦ Summarize this vault with AI">✦</button>
       </div>
+      <div class="vi-ai-summary" id="vi-ai-summary" style="display:none"></div>
       <div class="vault-interior-list" id="vi-list"></div>
       <button class="vault-fab" id="vault-fab" title="Add new item">+</button>
     </div>
@@ -1942,7 +1974,9 @@ function openVaultInterior(cat) {
     });
     list.appendChild(emptyDiv);
   } else {
-    items.forEach((it, i) => {
+    // Sort newest first
+    const sorted = [...items].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    sorted.forEach((it, i) => {
       const badge = it.type === 'link' ? '🔗' : it.type === 'photo' ? '🖼' : '📝';
       const pillBg = it.type === 'link' ? 'rgba(91,155,180,0.15)' : it.type === 'photo' ? 'rgba(139,126,200,0.15)' : 'rgba(212,146,46,0.12)';
       const pillColor = it.type === 'link' ? '#5B9BB4' : it.type === 'photo' ? '#8B7EC8' : 'var(--gold)';
@@ -2738,6 +2772,7 @@ function wire() {
   /* --- Vault interior --- */
   document.getElementById('vault-back').addEventListener('click', () => {
     S.openVault = null; S.vaultContext = null;
+    document.getElementById('vi-ai-summary').style.display = 'none';
     gotoView('empty');
   });
   document.getElementById('vault-fab').addEventListener('click', () => {
@@ -2746,6 +2781,40 @@ function wire() {
     S.vaultContext = S.openVault;
     updateVaultIndicator();
     updateSaveBtn();
+  });
+
+  /* --- Vault AI summarize --- */
+  document.getElementById('vi-ai-btn').addEventListener('click', async () => {
+    const items = S.items.filter(it => it.category === S.openVault);
+    if (!items.length) { showToast('Add some notes first!'); return; }
+    if (!S.aiOnline) { showToast('AI is offline — start Ollama to use this'); return; }
+
+    const btn = document.getElementById('vi-ai-btn');
+    const summaryEl = document.getElementById('vi-ai-summary');
+    btn.classList.add('thinking');
+    summaryEl.style.display = 'none';
+
+    const titles = items.map(it => `• ${it.title}${it.body ? ': ' + it.body.slice(0, 60) : ''}`).join('\n');
+    const prompt = `Summarize these notes from the "${S.openVault}" vault in 2-3 sentences:\n${titles}`;
+
+    try {
+      const res = await fetch(`${OLLAMA}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: OLLAMA_MODEL, prompt, stream: false }),
+        mode: 'cors',
+      });
+      const data = await res.json();
+      const summary = data.response?.trim() || 'No summary generated.';
+      summaryEl.innerHTML = `<span class="vi-ai-summary-close" id="vi-summary-close">✕</span>✦ ${esc(summary)}`;
+      summaryEl.style.display = 'block';
+      document.getElementById('vi-summary-close').addEventListener('click', () => {
+        summaryEl.style.display = 'none';
+      });
+    } catch(e) {
+      showToast('AI summary failed');
+    }
+    btn.classList.remove('thinking');
   });
 
   document.getElementById('save-btn').addEventListener('click', saveNote);
