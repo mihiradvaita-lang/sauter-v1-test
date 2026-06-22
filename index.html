@@ -1428,6 +1428,20 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
 .toast-warn    { border-color: rgba(200,120,60,0.3); color: #d4924e; }
 .toast-error   { border-color: rgba(200,60,60,0.3);  color: #e05555; }
 
+/* ===== HOME STATS STRIP ===== */
+.home-stats-strip {
+  display: flex; gap: 12px; justify-content: center; align-items: center;
+  padding: 8px 20px 0; pointer-events: none; position: relative; z-index: 3;
+}
+.home-stat-pill {
+  display: flex; align-items: center; gap: 5px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 20px; padding: 4px 12px; font-size: 11px; color: var(--t4);
+  pointer-events: auto;
+}
+.home-stat-pill b { color: var(--t2); font-weight: 600; }
+.home-stat-sep { width: 1px; height: 14px; background: rgba(255,255,255,0.08); }
+
 /* ===== MAIN SCREEN BOTTOM BAR ===== */
 .main-bottom-bar {
   position: absolute; bottom: 0; left: 0; right: 0; z-index: 3;
@@ -1663,6 +1677,9 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
         <div class="vault-section-title">Your Vaults</div>
         <div class="vault-grid" id="vault-grid"></div>
       </div>
+
+      <!-- Stats strip -->
+      <div class="home-stats-strip" id="home-stats-strip"></div>
 
       <!-- Main screen: search + recent items -->
       <div class="main-bottom-bar" id="main-bottom-bar">
@@ -2774,6 +2791,27 @@ function renderRecentItems() {
   const clearBtn   = document.getElementById('main-search-clear');
   const viewAllBtn = document.getElementById('recent-view-all');
   if (!list) return;
+
+  // Update home stats strip
+  const statsStrip = document.getElementById('home-stats-strip');
+  if (statsStrip) {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const todayCount = S.items.filter(it => it.createdAt >= today.getTime()).length;
+    const totalWords = S.items.reduce((acc, it) => acc + ((it.body||'')+' '+(it.title||'')).split(/\s+/).filter(Boolean).length, 0);
+    const vaultCount = new Set(S.items.map(i => i.category)).size;
+    if (S.items.length > 0) {
+      statsStrip.innerHTML = `
+        <div class="home-stat-pill"><b>${S.items.length}</b> note${S.items.length !== 1 ? 's' : ''}</div>
+        <div class="home-stat-sep"></div>
+        <div class="home-stat-pill"><b>${totalWords.toLocaleString()}</b> words</div>
+        <div class="home-stat-sep"></div>
+        <div class="home-stat-pill"><b>${vaultCount}</b> vault${vaultCount !== 1 ? 's' : ''}</div>
+        ${todayCount > 0 ? `<div class="home-stat-sep"></div><div class="home-stat-pill" style="color:var(--gold);border-color:rgba(212,146,46,0.2)"><b>${todayCount}</b> today</div>` : ''}
+      `;
+    } else {
+      statsStrip.innerHTML = '';
+    }
+  }
 
   const q = (S.mainSearch || '').toLowerCase();
   let items;
