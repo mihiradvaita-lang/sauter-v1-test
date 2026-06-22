@@ -590,6 +590,35 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
 }
 .vi-card.vi-focused .vi-card-del { opacity: 1; pointer-events: all; }
 
+.vi-sort-btn {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+  color: var(--t3); font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  transition: all 160ms var(--eo);
+}
+.vi-sort-btn:hover { background: rgba(255,255,255,0.1); color: var(--t1); }
+.vi-sort-btn.active { background: rgba(212,146,46,0.12); border-color: rgba(212,146,46,0.25); color: var(--gold); }
+.vi-sort-menu {
+  position: absolute; top: calc(100% + 6px); right: 40px;
+  background: var(--s-card); border: 1px solid var(--s-border2);
+  border-radius: 10px; overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.35);
+  z-index: 200;
+  display: none;
+  min-width: 160px;
+}
+.vi-sort-menu.open { display: block; animation: card-in 180ms var(--eo) forwards; }
+.vi-sort-opt {
+  padding: 10px 14px; font-size: 12px; color: var(--t2);
+  cursor: pointer; display: flex; align-items: center; gap: 8px;
+  transition: background 120ms;
+}
+.vi-sort-opt:hover { background: rgba(255,255,255,0.05); }
+.vi-sort-opt.selected { color: var(--gold); }
+.vi-sort-opt.selected::after { content: '✓'; margin-left: auto; font-size: 11px; }
+
 .vi-ai-btn {
   width: 28px; height: 28px; border-radius: 50%;
   background: rgba(212,146,46,0.1); border: 1px solid rgba(212,146,46,0.2);
@@ -1685,7 +1714,7 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
 
     <!-- VAULT INTERIOR -->
     <div class="view vault-interior" id="v-vault">
-      <div class="vault-interior-bar">
+      <div class="vault-interior-bar" style="position:relative">
         <button class="back-btn" id="vault-back">
           <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
             <path d="M8 2.5L4 6.5l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -1693,6 +1722,12 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
           All Vaults
         </button>
         <div class="vault-interior-title" id="vi-title"></div>
+        <button class="vi-sort-btn" id="vi-sort-btn" title="Sort order">↕</button>
+        <div class="vi-sort-menu" id="vi-sort-menu">
+          <div class="vi-sort-opt selected" data-sort="newest">🕐 Newest first</div>
+          <div class="vi-sort-opt" data-sort="oldest">🕰 Oldest first</div>
+          <div class="vi-sort-opt" data-sort="alpha">🔤 A → Z</div>
+        </div>
         <button class="vi-ai-btn" id="vi-ai-btn" title="✦ Summarize this vault with AI">✦</button>
       </div>
       <div class="vi-ai-summary" id="vi-ai-summary" style="display:none"></div>
@@ -2082,8 +2117,13 @@ function openVaultInterior(cat) {
     }
     list.appendChild(emptyDiv);
   } else {
-    // Sort newest first
-    const sorted = [...items].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    // Sort by user preference
+    const sortMode = S._viSort || 'newest';
+    const sorted = [...items].sort((a, b) => {
+      if (sortMode === 'oldest') return (a.createdAt || 0) - (b.createdAt || 0);
+      if (sortMode === 'alpha')  return (a.title || '').localeCompare(b.title || '');
+      return (b.createdAt || 0) - (a.createdAt || 0); // newest first (default)
+    });
     sorted.forEach((it, i) => {
       const badge = it.type === 'link' ? '🔗' : it.type === 'photo' ? '🖼' : '📝';
       const pillBg = it.type === 'link' ? 'rgba(91,155,180,0.15)' : it.type === 'photo' ? 'rgba(139,126,200,0.15)' : 'rgba(212,146,46,0.12)';
@@ -2965,6 +3005,30 @@ function wire() {
     S.vaultContext = S.openVault;
     updateVaultIndicator();
     updateSaveBtn();
+  });
+
+  /* --- Vault sort menu --- */
+  const viSortBtn = document.getElementById('vi-sort-btn');
+  const viSortMenu = document.getElementById('vi-sort-menu');
+  viSortBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    viSortMenu.classList.toggle('open');
+    viSortBtn.classList.toggle('active', viSortMenu.classList.contains('open'));
+  });
+  viSortMenu.addEventListener('click', (e) => {
+    const opt = e.target.closest('.vi-sort-opt');
+    if (!opt) return;
+    S._viSort = opt.dataset.sort;
+    viSortMenu.querySelectorAll('.vi-sort-opt').forEach(o => o.classList.toggle('selected', o === opt));
+    viSortMenu.classList.remove('open');
+    viSortBtn.classList.remove('active');
+    openVaultInterior(S.openVault);
+  });
+  document.addEventListener('click', (e) => {
+    if (!viSortMenu.contains(e.target) && e.target !== viSortBtn) {
+      viSortMenu.classList.remove('open');
+      viSortBtn.classList.remove('active');
+    }
   });
 
   /* --- Vault AI summarize --- */
