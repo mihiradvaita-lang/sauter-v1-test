@@ -1041,6 +1041,12 @@ kbd {
 }
 .d-saved { font-size: 11px; color: var(--t4); }
 .d-readtime { font-size: 10px; color: var(--t4); background: var(--s-s1); border: 1px solid var(--s-border); border-radius: 8px; padding: 2px 7px; margin-left: 6px; }
+#d-toc { background: rgba(212,146,46,0.05); border: 1px solid rgba(212,146,46,0.15); border-radius: 10px; padding: 10px 14px; margin-bottom: 18px; }
+.d-toc-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--t4); margin-bottom: 6px; font-weight: 600; }
+.d-toc-link { display: block; font-size: 12px; color: var(--t3); text-decoration: none; padding: 2px 0; transition: color 140ms; line-height: 1.5; }
+.d-toc-link:hover { color: var(--gold); }
+.d-toc-sub { padding-left: 14px; font-size: 11px; color: var(--t4); }
+.d-toc-sub:hover { color: var(--t2); }
 .del-wrap { display: flex; align-items: center; gap: 8px; }
 
 #del-btn {
@@ -1891,6 +1897,7 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
         <div class="detail-img-wrap" id="d-img-wrap" style="display:none">
           <img id="d-img" src="" alt="Attached image">
         </div>
+        <div id="d-toc" style="display:none"></div>
         <div id="d-body"></div>
       </div>
 
@@ -2906,6 +2913,22 @@ function openDetail(id) {
   document.getElementById('d-date').textContent    = fmt(it.createdAt);
   document.getElementById('d-title').textContent   = it.title || 'Untitled';
   document.getElementById('d-body').innerHTML      = renderMarkdown(it.body || '');
+
+  // Table of contents for long notes with headings
+  const tocEl = document.getElementById('d-toc');
+  if (tocEl) {
+    const headings = [...document.querySelectorAll('#d-body h2, #d-body h3')];
+    if (headings.length >= 2) {
+      headings.forEach((h, idx) => { h.id = 'dh-' + idx; });
+      tocEl.innerHTML = '<div class="d-toc-label">Contents</div>' +
+        headings.map((h, idx) =>
+          `<a class="d-toc-link${h.tagName === 'H3' ? ' d-toc-sub' : ''}" href="#dh-${idx}">${h.textContent.replace(/^##?\s?/, '')}</a>`
+        ).join('');
+      tocEl.style.display = '';
+    } else {
+      tocEl.style.display = 'none';
+    }
+  }
   document.getElementById('d-saved').textContent = it.updatedAt
     ? 'Edited ' + fmt(it.updatedAt) + ' · Created ' + fmtLong(it.createdAt)
     : 'Saved ' + fmtLong(it.createdAt);
