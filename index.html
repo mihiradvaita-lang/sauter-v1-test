@@ -449,6 +449,16 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
   border-bottom: 1px solid var(--s-border);
   display: flex; align-items: center; justify-content: space-between;
   flex-shrink: 0;
+  position: relative;
+}
+.vault-interior-bar::after {
+  content: '';
+  position: absolute;
+  bottom: -1px; left: 40px; right: 40px;
+  height: 2px;
+  background: var(--vi-accent, var(--gold));
+  border-radius: 2px;
+  opacity: 0.45;
 }
 .vault-interior-title {
   font-size: 15px; font-weight: 600; color: var(--t1);
@@ -480,8 +490,14 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
   font-size: 13px; font-weight: 500; color: var(--t1);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.vi-card-snippet {
+  font-size: 11px; color: var(--t3);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-top: 2px; line-height: 1.4;
+  max-width: 100%;
+}
 .vi-card-meta {
-  font-size: 11px; color: var(--t4); margin-top: 3px;
+  font-size: 11px; color: var(--t4); margin-top: 4px;
   display: flex; align-items: center; gap: 8px;
 }
 .vi-card-cat {
@@ -490,10 +506,20 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
 }
 .vault-empty-state {
   flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 10px;
+  align-items: center; justify-content: center; gap: 12px;
   color: var(--t4); font-size: 13px;
+  padding: 40px 24px;
 }
-.vault-empty-state span:first-child { font-size: 28px; opacity: 0.4; }
+.vault-empty-icon { font-size: 36px; opacity: 0.35; line-height: 1; }
+.vault-empty-msg { font-size: 13px; color: var(--t3); }
+.vault-empty-cta {
+  margin-top: 4px; padding: 9px 20px;
+  background: rgba(212,146,46,0.1); border: 1px solid rgba(212,146,46,0.25);
+  border-radius: 20px; font-size: 12px; color: var(--gold);
+  font-weight: 500; cursor: pointer;
+  transition: all 180ms var(--eo);
+}
+.vault-empty-cta:hover { background: rgba(212,146,46,0.18); transform: translateY(-1px); }
 .vault-fab {
   position: absolute; bottom: 28px; right: 40px;
   width: 48px; height: 48px; border-radius: 50%;
@@ -553,6 +579,18 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
   transition: color 180ms var(--eo);
 }
 #vc-cancel-btn:hover { color: var(--t2); }
+.vc-emoji-row {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.vc-emoji-btn {
+  width: 34px; height: 34px; border-radius: 9px; font-size: 17px;
+  background: var(--s-s1); border: 1px solid var(--s-border);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 140ms var(--eo);
+}
+.vc-emoji-btn:hover { background: var(--s-card); border-color: var(--s-border2); transform: scale(1.08); }
+.vc-emoji-btn.selected { border-color: rgba(212,146,46,0.5); background: rgba(212,146,46,0.08); }
 
 /* ===== VIEW: IDLE ===== */
 #v-idle { align-items: center; justify-content: center; gap: 10px; }
@@ -1629,12 +1667,22 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
 <!-- VAULT CREATE MODAL -->
 <div class="vault-create-overlay" id="vault-create-overlay">
   <div class="vault-create-sheet">
-    <h3>Create New Vault</h3>
-    <p>Start with an emoji for an icon, e.g. "🎵 Music"</p>
+    <h3>New Vault</h3>
+    <p>Give it a name. Start with an emoji to set its icon.</p>
     <input id="vc-name-input" type="text" placeholder="e.g. 🎵 Music" autocomplete="off" spellcheck="false" maxlength="30">
+    <div class="vc-emoji-row" id="vc-emoji-row">
+      <button class="vc-emoji-btn" data-emoji="🎵">🎵</button>
+      <button class="vc-emoji-btn" data-emoji="🚀">🚀</button>
+      <button class="vc-emoji-btn" data-emoji="📚">📚</button>
+      <button class="vc-emoji-btn" data-emoji="🎨">🎨</button>
+      <button class="vc-emoji-btn" data-emoji="🧪">🧪</button>
+      <button class="vc-emoji-btn" data-emoji="💡">💡</button>
+      <button class="vc-emoji-btn" data-emoji="🌿">🌿</button>
+      <button class="vc-emoji-btn" data-emoji="⚡">⚡</button>
+    </div>
     <div class="vc-buttons">
       <button id="vc-cancel-btn">Cancel</button>
-      <button id="vc-create-btn" disabled>Create</button>
+      <button id="vc-create-btn" disabled>Create Vault</button>
     </div>
   </div>
 </div>
@@ -1869,6 +1917,10 @@ function openVaultInterior(cat) {
   const icon  = vaultIcon(cat);
   const items = S.items.filter(it => it.category === cat);
 
+  // Set accent color CSS variable on vault element
+  const vaultEl = document.getElementById('v-vault');
+  vaultEl.style.setProperty('--vi-accent', color);
+
   document.getElementById('vi-title').innerHTML =
     `<span style="font-size:18px">${icon}</span> ${esc(cat)} <span class="vault-interior-count">${items.length} item${items.length !== 1 ? 's' : ''}</span>`;
 
@@ -1897,12 +1949,13 @@ function openVaultInterior(cat) {
       const card = document.createElement('div');
       card.className = 'vi-card';
       card.style.animationDelay = (i * 40) + 'ms';
+      const snippet = (it.body || '').replace(/[#*`_~\[\]]/g, '').slice(0, 80);
       card.innerHTML = `
         <span class="vi-type-pill" style="background:${pillBg};color:${pillColor}">${badge}</span>
         <div class="vi-card-body">
           <div class="vi-card-title">${esc(it.title || 'Untitled')}</div>
+          ${snippet ? `<div class="vi-card-snippet">${esc(snippet)}</div>` : ''}
           <div class="vi-card-meta">
-            <span class="vi-card-cat" style="${catStyle(it.category)}">${esc(it.category)}</span>
             <span>${fmt(it.createdAt)}</span>
           </div>
         </div>
@@ -2953,6 +3006,20 @@ function wire() {
   document.getElementById('vc-cancel-btn').addEventListener('click', closeVaultCreate);
   document.getElementById('vault-create-overlay').addEventListener('click', e => {
     if (e.target.id === 'vault-create-overlay') closeVaultCreate();
+  });
+  // Emoji quick-pick buttons
+  document.getElementById('vc-emoji-row').addEventListener('click', e => {
+    const btn = e.target.closest('.vc-emoji-btn');
+    if (!btn) return;
+    const emoji = btn.dataset.emoji;
+    // Toggle selection highlight
+    document.querySelectorAll('.vc-emoji-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    // Prepend emoji to current input value (replace existing emoji prefix if any)
+    const cur = vcInput.value.replace(/^[\p{Emoji}\s]+/u, '').trim();
+    vcInput.value = emoji + ' ' + cur;
+    vcInput.focus();
+    vcCreateBtn.disabled = !vcInput.value.trim();
   });
 
   /* --- Main screen search --- */
