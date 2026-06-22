@@ -1485,7 +1485,13 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
   border-bottom: 1px solid var(--s-border);
   margin-bottom: 10px;
 }
-.sb-ai-label { font-size: 10px; color: var(--t4); letter-spacing: 0.05em; }
+.sb-ai-label { font-size: 10px; color: var(--t4); letter-spacing: 0.05em; flex: 1; }
+.sb-backup-btn, .sb-restore-btn {
+  font-size: 13px; color: var(--t4); background: transparent; border: none;
+  cursor: pointer; padding: 2px 3px; border-radius: 4px;
+  transition: color 140ms; line-height: 1;
+}
+.sb-backup-btn:hover, .sb-restore-btn:hover { color: var(--t2); }
 
 /* ===== COMPOSE VAULT SELECTOR ===== */
 .compose-vault-row {
@@ -1765,6 +1771,8 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
       <div class="sb-ai-row">
         <div class="status-dot" id="sb-status-dot"></div>
         <span class="sb-ai-label" id="sb-status-txt">Checking AI…</span>
+        <button class="sb-backup-btn" id="sb-backup-btn" title="Backup all notes as JSON">⤓</button>
+        <label class="sb-restore-btn" title="Restore from JSON backup" style="cursor:pointer">⤒<input type="file" id="sb-restore-input" accept=".json" style="display:none"></label>
       </div>
       <button class="sb-chat-btn" id="chat-btn">
         <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
@@ -3996,6 +4004,50 @@ function wire() {
   });
 
   /* --- Chat assistant --- */
+  // Backup & Restore
+  document.getElementById('sb-backup-btn').addEventListener('click', () => {
+    const backup = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      items: S.items,
+      customVaults: S.customVaults,
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `sauter-backup-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast(`Backed up ${S.items.length} notes ✓`, 'success');
+  });
+  document.getElementById('sb-restore-input').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!Array.isArray(data.items)) throw new Error('Invalid backup format');
+        if (!confirm(`Restore ${data.items.length} notes from backup?\n\nThis will MERGE with your current notes (duplicates skipped).`)) return;
+        const existingIds = new Set(S.items.map(i => i.id));
+        const newItems = data.items.filter(i => !existingIds.has(i.id));
+        S.items = [...S.items, ...newItems];
+        if (Array.isArray(data.customVaults)) {
+          const existingVaultNames = new Set(S.customVaults.map(v => v.name));
+          data.customVaults.forEach(v => { if (!existingVaultNames.has(v.name)) S.customVaults.push(v); });
+          storeCustomVaults();
+        }
+        store();
+        renderCatFilters(); renderList(); renderVaultGrid(); renderRecentItems();
+        showToast(`Restored ${newItems.length} new notes ✓`, 'success');
+      } catch (err) {
+        showToast('Invalid backup file', 'warn');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  });
+
   document.getElementById('chat-btn').addEventListener('click', () => {
     gotoView('chat');
     const chatDot  = document.getElementById('chat-dot');
