@@ -3291,17 +3291,41 @@ async function aiAutoCategorize(title, content) {
 
 /* --- Chat assistant — answers questions about the vault --- */
 async function aiChatQuery(message) {
-  const noteCtx = S.items.slice(0, 50).map((it, i) => {
-    const preview = (it.url || it.body || '').slice(0, 160);
-    return `[${i + 1}] ${it.category} — "${it.title || 'Untitled'}": ${preview}`;
-  }).join('\n') || '(no notes saved yet)';
+  // Build context: active note first (full body), then vault context, then recent notes
+  let contextParts = [];
+
+  if (S.activeId) {
+    const active = S.items.find(i => i.id === S.activeId);
+    if (active) {
+      contextParts.push(
+        `[CURRENT NOTE] "${active.title || 'Untitled'}" (${active.category})\n${(active.body || active.url || '').slice(0, 600)}`
+      );
+    }
+  }
+
+  if (S.openVault) {
+    const vaultItems = S.items.filter(it => it.category === S.openVault);
+    const vaultPreview = vaultItems.slice(0, 10).map(it =>
+      `• "${it.title || 'Untitled'}": ${(it.body || it.url || '').slice(0, 80)}`
+    ).join('\n');
+    contextParts.push(`[VAULT: ${S.openVault}]\n${vaultPreview}`);
+  }
+
+  const recentPreview = S.items
+    .filter(it => it.id !== S.activeId)
+    .slice(0, 20)
+    .map((it, i) => `[${i+1}] ${it.category} — "${it.title || 'Untitled'}": ${(it.url || it.body || '').slice(0, 100)}`)
+    .join('\n') || '(no other notes)';
+  contextParts.push(`[OTHER NOTES]\n${recentPreview}`);
+
+  const noteCtx = contextParts.join('\n\n');
 
   const prompt =
-    `You are a helpful assistant for SAUTER, a personal note-taking app. ` +
-    `The user has ${S.items.length} saved items.\n\n` +
-    `Vault contents:\n${noteCtx}\n\n` +
+    `You are SAUTER AI, an assistant inside a personal note-taking app. ` +
+    `The user has ${S.items.length} saved notes across ${new Set(S.items.map(i => i.category)).size} vaults.\n\n` +
+    `Context:\n${noteCtx}\n\n` +
     `User: ${message}\n\n` +
-    `Answer naturally and concisely. Reference specific notes when relevant. Under 160 words.`;
+    `Reply naturally and concisely. Reference specific notes or vault names when helpful. Under 200 words.`;
 
   for (const model of MODEL_CHAIN) {
     try {
