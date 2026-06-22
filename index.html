@@ -3354,6 +3354,28 @@ document.addEventListener('keydown', e => {
       else gotoView('empty');
     }
   }
+
+  // E: edit note from detail view
+  if (e.key === 'e' && S.view === 'detail' && S.activeId && !e.target.closest('input, textarea') && !ctrl) {
+    e.preventDefault();
+    openEdit(S.activeId);
+    return;
+  }
+
+  // G: go home
+  if (e.key === 'g' && !e.target.closest('input, textarea') && !ctrl) {
+    e.preventDefault();
+    S.openVault = null; S.vaultContext = null; S.activeId = null;
+    gotoView('empty');
+    return;
+  }
+
+  // ?: show keyboard shortcuts
+  if (e.key === '?' && !e.target.closest('input, textarea') && !ctrl) {
+    e.preventDefault();
+    showToast('⌘N new · E edit · G home · / search · J/K nav · Esc back', 'success');
+    return;
+  }
 });
 
 /* ---------- DROPZONE HELPERS ---------- */
