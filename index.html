@@ -473,8 +473,19 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
 .vault-interior-count {
   font-size: 11px; color: var(--t4); font-weight: 400;
 }
+.vi-stats-bar {
+  display: flex; align-items: center; gap: 14px;
+  padding: 0 44px 8px;
+  flex-shrink: 0;
+}
+.vi-stat {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 10px; color: var(--t4);
+}
+.vi-stat svg { opacity: 0.5; }
+
 .vault-interior-list {
-  flex: 1; overflow-y: auto; padding: 16px 40px;
+  flex: 1; overflow-y: auto; padding: 10px 40px 16px;
   display: flex; flex-direction: column;
 }
 .vault-interior-list::-webkit-scrollbar { width: 3px; }
@@ -1751,6 +1762,7 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
         </div>
         <button class="vi-ai-btn" id="vi-ai-btn" title="✦ Summarize this vault with AI">✦</button>
       </div>
+      <div class="vi-stats-bar" id="vi-stats-bar"></div>
       <div class="vi-ai-summary" id="vi-ai-summary" style="display:none"></div>
       <div class="vi-search-bar" id="vi-search-bar">
         <div class="vi-search-wrap">
@@ -2106,6 +2118,20 @@ function openVaultInterior(cat) {
     : `${items.length}`;
   document.getElementById('vi-title').innerHTML =
     `<span style="font-size:18px">${icon}</span> ${esc(cat)} <span class="vault-interior-count">${countLabel} item${allItems.length !== 1 ? 's' : ''}</span>`;
+
+  // Render stats bar
+  const statsBar = document.getElementById('vi-stats-bar');
+  if (statsBar && allItems.length > 0) {
+    const totalWords = allItems.reduce((acc, it) => acc + ((it.body || '') + ' ' + (it.title || '')).split(/\s+/).filter(Boolean).length, 0);
+    const lastAt = allItems.reduce((max, it) => Math.max(max, it.createdAt || 0), 0);
+    statsBar.innerHTML = `
+      <span class="vi-stat"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><rect x="1" y="2" width="8" height="1.2" rx="0.6" fill="currentColor"/><rect x="1" y="4.4" width="5" height="1.2" rx="0.6" fill="currentColor"/><rect x="1" y="6.8" width="6.5" height="1.2" rx="0.6" fill="currentColor"/></svg>${totalWords.toLocaleString()} words</span>
+      <span class="vi-stat"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="3.5" stroke="currentColor" stroke-width="1"/><path d="M5 3v2.2l1.4 1.4" stroke="currentColor" stroke-width="1" stroke-linecap="round"/></svg>${fmt(lastAt)}</span>
+    `;
+    statsBar.style.display = '';
+  } else if (statsBar) {
+    statsBar.style.display = 'none';
+  }
 
   const list = document.getElementById('vi-list');
   list.innerHTML = '';
