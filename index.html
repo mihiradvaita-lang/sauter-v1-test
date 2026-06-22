@@ -587,6 +587,13 @@ body.focus-mode .focus-toggle-btn { color: var(--gold); border-color: rgba(212,1
   animation: card-in 320ms var(--eo) forwards;
   position: relative;
 }
+.vi-card::before {
+  content: ''; position: absolute; left: 0; top: 14%; bottom: 14%;
+  width: 3px; border-radius: 0 2px 2px 0;
+  background: var(--vi-accent, var(--gold));
+  opacity: 0; transition: opacity 220ms var(--eo);
+}
+.vi-card:hover::before, .vi-card.vi-focused::before { opacity: 0.65; }
 .vi-card:hover { background: var(--s-card); border-color: var(--s-border2); transform: translateY(-1px); }
 .vi-type-badge { font-size: 16px; flex-shrink: 0; }
 .vi-card-body { flex: 1; min-width: 0; }
@@ -897,6 +904,53 @@ kbd {
   border-color: var(--t1);
   box-shadow: 0 0 0 2px var(--s-card2);
   transform: scale(1.15);
+}
+
+/* ===== KEYBOARD SHORTCUTS OVERLAY ===== */
+.kb-overlay {
+  position: fixed; inset: 0; z-index: 700;
+  background: rgba(6,4,2,0.72); backdrop-filter: blur(6px);
+  display: none; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 200ms var(--eo);
+}
+.kb-overlay.open { display: flex; }
+.kb-overlay.visible { opacity: 1; }
+.kb-sheet {
+  width: 420px; background: var(--s-card2);
+  border: 1px solid var(--s-border2); border-radius: 16px;
+  padding: 22px 24px 20px;
+  transform: translateY(12px) scale(0.97);
+  transition: transform 250ms var(--eo);
+}
+.kb-overlay.visible .kb-sheet { transform: translateY(0) scale(1); }
+.kb-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px;
+}
+.kb-title { font-size: 14px; font-weight: 600; color: var(--t1); }
+.kb-close {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: transparent; border: 1px solid var(--s-border);
+  color: var(--t4); font-size: 11px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 140ms var(--eo);
+}
+.kb-close:hover { color: var(--t2); border-color: var(--s-border2); background: rgba(255,255,255,0.05); }
+.kb-sections { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.kb-section-title {
+  font-size: 10px; font-weight: 600; letter-spacing: 0.1em;
+  color: var(--t4); text-transform: uppercase; margin-bottom: 10px;
+}
+.kb-row {
+  display: flex; align-items: center; gap: 5px;
+  margin-bottom: 7px; font-size: 12px; color: var(--t3);
+}
+.kb-row span { margin-left: auto; font-size: 11px; color: var(--t4); }
+.kb-row kbd {
+  display: inline-block; padding: 2px 6px;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 4px; font-size: 10px; color: var(--t2);
+  font-family: inherit; white-space: nowrap;
 }
 
 /* ===== VIEW: IDLE ===== */
@@ -2138,6 +2192,41 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<!-- KEYBOARD SHORTCUTS OVERLAY -->
+<div class="kb-overlay" id="kb-overlay">
+  <div class="kb-sheet">
+    <div class="kb-header">
+      <span class="kb-title">Keyboard Shortcuts</span>
+      <button class="kb-close" id="kb-close">✕</button>
+    </div>
+    <div class="kb-sections">
+      <div class="kb-section">
+        <div class="kb-section-title">Global</div>
+        <div class="kb-row"><kbd>Ctrl</kbd><kbd>N</kbd><span>New note</span></div>
+        <div class="kb-row"><kbd>Ctrl</kbd><kbd>K</kbd><span>Focus search</span></div>
+        <div class="kb-row"><kbd>F</kbd><span>Toggle focus mode</span></div>
+        <div class="kb-row"><kbd>?</kbd><span>Show shortcuts</span></div>
+        <div class="kb-row"><kbd>Esc</kbd><span>Go back / close</span></div>
+      </div>
+      <div class="kb-section">
+        <div class="kb-section-title">In Compose</div>
+        <div class="kb-row"><kbd>Ctrl</kbd><kbd>S</kbd><span>Save note</span></div>
+        <div class="kb-row"><kbd>Ctrl</kbd><kbd>Enter</kbd><span>Save note</span></div>
+        <div class="kb-row"><kbd>Ctrl</kbd><kbd>B</kbd><span>Bold text</span></div>
+        <div class="kb-row"><kbd>Ctrl</kbd><kbd>I</kbd><span>Italic text</span></div>
+      </div>
+      <div class="kb-section">
+        <div class="kb-section-title">In Vault</div>
+        <div class="kb-row"><kbd>J</kbd><kbd>K</kbd><span>Navigate notes</span></div>
+        <div class="kb-row"><kbd>Enter</kbd><span>Open selected note</span></div>
+        <div class="kb-row"><kbd>N</kbd><span>New note in vault</span></div>
+        <div class="kb-row"><kbd>/</kbd><span>Search vault</span></div>
+        <div class="kb-row"><kbd>Esc</kbd><span>Back to vaults</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- VAULT CREATE MODAL -->
 <div class="vault-create-overlay" id="vault-create-overlay">
   <div class="vault-create-sheet">
@@ -2671,6 +2760,17 @@ function closeVaultCreate() {
   const overlay = document.getElementById('vault-create-overlay');
   overlay.classList.remove('visible');
   setTimeout(() => overlay.classList.remove('open'), 270);
+}
+
+function openKbHelp() {
+  const ov = document.getElementById('kb-overlay');
+  ov.classList.add('open');
+  requestAnimationFrame(() => requestAnimationFrame(() => ov.classList.add('visible')));
+}
+function closeKbHelp() {
+  const ov = document.getElementById('kb-overlay');
+  ov.classList.remove('visible');
+  setTimeout(() => ov.classList.remove('open'), 220);
 }
 
 function createCustomVault(rawName) {
@@ -3667,6 +3767,15 @@ document.addEventListener('keydown', e => {
 
   if (ctrl && e.key === 'n') { e.preventDefault(); openCompose(); return; }
 
+  // ? — keyboard shortcuts help (not in inputs)
+  if (e.key === '?' && !e.target.closest('input, textarea')) {
+    e.preventDefault();
+    const ov = document.getElementById('kb-overlay');
+    const isOpen = ov.classList.contains('open');
+    if (isOpen) { closeKbHelp(); } else { openKbHelp(); }
+    return;
+  }
+
   if (ctrl && (e.key === 's' || e.key === 'Enter') && S.view === 'compose') {
     e.preventDefault();
     if (!document.getElementById('save-btn').disabled) saveNote();
@@ -3716,6 +3825,9 @@ document.addEventListener('keydown', e => {
   }
 
   if (e.key === 'Escape') {
+    // Close keyboard help overlay first
+    const kbOv = document.getElementById('kb-overlay');
+    if (kbOv && kbOv.classList.contains('open')) { closeKbHelp(); return; }
     // Exit focus mode first
     if (document.body.classList.contains('focus-mode')) {
       document.body.classList.remove('focus-mode');
@@ -4474,6 +4586,11 @@ function wire() {
   document.getElementById('vc-cancel-btn').addEventListener('click', closeVaultCreate);
   document.getElementById('vault-create-overlay').addEventListener('click', e => {
     if (e.target.id === 'vault-create-overlay') closeVaultCreate();
+  });
+  // Keyboard shortcuts overlay
+  document.getElementById('kb-close').addEventListener('click', closeKbHelp);
+  document.getElementById('kb-overlay').addEventListener('click', e => {
+    if (e.target.id === 'kb-overlay') closeKbHelp();
   });
   // Emoji quick-pick buttons
   document.getElementById('vc-emoji-row').addEventListener('click', e => {
