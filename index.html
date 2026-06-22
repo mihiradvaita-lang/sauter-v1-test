@@ -703,6 +703,23 @@ kbd {
 }
 .vi-search-clear:hover { background: rgba(255,255,255,0.14); color: var(--t2); }
 
+.vi-type-filters {
+  display: flex; gap: 6px; padding: 4px 14px 10px;
+  flex-shrink: 0; overflow-x: auto;
+}
+.vi-type-filters::-webkit-scrollbar { display: none; }
+.vi-type-chip {
+  padding: 3px 11px; border-radius: 20px; font-size: 10.5px;
+  border: 1px solid rgba(255,255,255,0.1); background: transparent;
+  color: var(--t3); cursor: pointer; white-space: nowrap;
+  transition: all 140ms var(--eo); flex-shrink: 0;
+}
+.vi-type-chip:hover { color: var(--t1); border-color: rgba(255,255,255,0.22); }
+.vi-type-chip.vt-active {
+  background: rgba(212,146,46,0.14); border-color: rgba(212,146,46,0.35);
+  color: var(--gold);
+}
+
 .vi-card-del {
   position: absolute; top: 10px; right: 10px;
   width: 22px; height: 22px; border-radius: 50%;
@@ -2127,6 +2144,12 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
           <button class="vi-search-clear" id="vi-search-clear" style="display:none">✕</button>
         </div>
       </div>
+      <div class="vi-type-filters" id="vi-type-filters">
+        <button class="vi-type-chip vt-active" data-vtype="all">All</button>
+        <button class="vi-type-chip" data-vtype="note">📝 Notes</button>
+        <button class="vi-type-chip" data-vtype="link">🔗 Links</button>
+        <button class="vi-type-chip" data-vtype="photo">🖼 Photos</button>
+      </div>
       <div class="vault-interior-list" id="vi-list"></div>
       <button class="vault-fab" id="vault-fab" title="Add new item (+)">+</button>
       <div class="vi-key-hints">
@@ -2310,6 +2333,7 @@ let S = {
   vaultContext: null,
   editId: null,
   mainSearch: '',
+  _viSearch: '', _viTypeFilter: 'all',
 };
 
 /* ---------- STORAGE ---------- */
@@ -2562,6 +2586,7 @@ function openVaultInterior(cat) {
   // Clear search when switching vaults
   if (S.openVault !== cat) {
     S._viSearch = '';
+    S._viTypeFilter = 'all';
     const inp = document.getElementById('vi-search-input');
     if (inp) { inp.value = ''; }
     const clr = document.getElementById('vi-search-clear');
@@ -2574,9 +2599,18 @@ function openVaultInterior(cat) {
   const allItems = S.items.filter(it => it.category === cat);
   // Apply vault search filter if active
   const viQ = (S._viSearch || '').toLowerCase();
-  const items = viQ
+  let items = viQ
     ? allItems.filter(it => (it.title || '').toLowerCase().includes(viQ) || (it.body || '').toLowerCase().includes(viQ))
     : allItems;
+
+  // Type filter
+  const vtf = S._viTypeFilter || 'all';
+  if (vtf !== 'all') {
+    items = items.filter(it => (it.type || 'note') === vtf);
+  }
+  // Sync chip UI
+  document.querySelectorAll('.vi-type-chip').forEach(c =>
+    c.classList.toggle('vt-active', c.dataset.vtype === vtf));
 
   // Set accent color CSS variable on vault element
   const vaultEl = document.getElementById('v-vault');
@@ -4014,6 +4048,12 @@ function wire() {
     viSearchClear.style.display = 'none';
     openVaultInterior(S.openVault);
     viSearchInput.focus();
+  });
+  document.getElementById('vi-type-filters').addEventListener('click', e => {
+    const chip = e.target.closest('.vi-type-chip');
+    if (!chip) return;
+    S._viTypeFilter = chip.dataset.vtype || 'all';
+    openVaultInterior(S.openVault);
   });
   document.getElementById('vault-fab').addEventListener('click', () => {
     openCompose();
