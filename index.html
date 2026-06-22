@@ -527,6 +527,9 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
   font-size: 11px; color: var(--t4); margin-top: 4px;
   display: flex; align-items: center; gap: 8px;
 }
+.vi-wc { color: var(--t4); opacity: 0.7; font-size: 10px; }
+.vi-url-tag { color: #5B9BB4; opacity: 0.75; font-size: 10px; font-family: monospace; }
+.vi-hl { background: rgba(212,146,46,0.25); color: var(--gold); border-radius: 2px; padding: 0 1px; }
 .vi-card-cat {
   font-size: 9px; padding: 2px 7px; border-radius: 20px; font-weight: 600;
   letter-spacing: 0.06em; text-transform: uppercase;
@@ -2310,15 +2313,25 @@ function openVaultInterior(cat) {
       const card = document.createElement('div');
       card.className = 'vi-card';
       card.style.animationDelay = (i * 40) + 'ms';
-      const snippet = (it.body || '').replace(/[#*`_~\[\]]/g, '').slice(0, 80);
+      const rawSnippet = it.type === 'link' ? (it.url || '') : (it.body || '').replace(/[#*`_~\[\]>]/g, '');
+      const snippet = rawSnippet.slice(0, 90);
+      const wordCount2 = ((it.body || '') + ' ' + (it.title || '')).split(/\s+/).filter(Boolean).length;
       if (it.pinned) card.classList.add('vi-card-pinned');
+      const highlightSearch = (str) => {
+        const q = (S._viSearch || '').trim();
+        if (!q) return esc(str);
+        const idx = str.toLowerCase().indexOf(q.toLowerCase());
+        if (idx === -1) return esc(str);
+        return esc(str.slice(0, idx)) + '<mark class="vi-hl">' + esc(str.slice(idx, idx + q.length)) + '</mark>' + esc(str.slice(idx + q.length));
+      };
       card.innerHTML = `
         <span class="vi-type-pill" style="background:${pillBg};color:${pillColor}">${badge}</span>
         <div class="vi-card-body">
-          <div class="vi-card-title">${it.pinned ? '<span class="vi-pin-badge" title="Pinned">📌</span>' : ''}${esc(it.title || 'Untitled')}</div>
-          ${snippet ? `<div class="vi-card-snippet">${esc(snippet)}</div>` : ''}
+          <div class="vi-card-title">${it.pinned ? '<span class="vi-pin-badge" title="Pinned">📌</span>' : ''}${highlightSearch(it.title || 'Untitled')}</div>
+          ${snippet ? `<div class="vi-card-snippet">${it.type === 'link' ? '<span class="vi-url-tag">' + esc(snippet) + '</span>' : highlightSearch(snippet) + (rawSnippet.length > 90 ? '…' : '')}</div>` : ''}
           <div class="vi-card-meta">
             <span>${fmt(it.createdAt)}</span>
+            ${it.type === 'note' && wordCount2 > 0 ? `<span class="vi-wc">${wordCount2}w</span>` : ''}
           </div>
         </div>
         <button class="vi-card-pin" data-id="${esc(it.id)}" title="${it.pinned ? 'Unpin' : 'Pin to top'}" style="color:${it.pinned ? 'var(--gold)' : ''}">📌</button>
