@@ -1509,6 +1509,14 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
   transition: all 200ms var(--eo);
 }
 .edit-note-btn:hover { color: var(--gold); border-color: rgba(212,146,46,0.32); }
+.copy-note-btn {
+  padding: 7px 10px; font-size: 14px;
+  background: transparent; border: 1px solid var(--s-border);
+  border-radius: 8px; color: var(--t3); flex-shrink: 0;
+  transition: all 200ms var(--eo); cursor: pointer;
+}
+.copy-note-btn:hover { color: var(--gold); border-color: rgba(212,146,46,0.32); }
+.copy-note-btn.copied { color: #5acc8a; border-color: rgba(76,175,118,0.32); }
 
 /* ===== VAULT INTERIOR EMPTY STATE ===== */
 .vault-empty-state {
@@ -1784,6 +1792,7 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
         <div style="display:flex;align-items:center;gap:8px;">
           <button class="edit-note-btn" id="edit-btn">✏ Edit</button>
           <button class="move-vault-btn" id="move-vault-btn">⤲ Move</button>
+          <button class="copy-note-btn" id="copy-note-btn" title="Copy to clipboard">⎘</button>
         </div>
         <div class="del-wrap">
           <div class="del-confirm-wrap" id="del-confirm">
@@ -3524,6 +3533,23 @@ function wire() {
   /* --- Edit button --- */
   document.getElementById('edit-btn').addEventListener('click', () => {
     if (S.activeId) openEdit(S.activeId);
+  });
+
+  /* --- Copy note to clipboard --- */
+  document.getElementById('copy-note-btn').addEventListener('click', async () => {
+    const it = S.items.find(i => i.id === S.activeId);
+    if (!it) return;
+    const text = [it.title || 'Untitled', '', it.body || ''].join('\n').trim();
+    try {
+      await navigator.clipboard.writeText(text);
+      const btn = document.getElementById('copy-note-btn');
+      btn.textContent = '✓';
+      btn.classList.add('copied');
+      showToast('Copied to clipboard', 'success');
+      setTimeout(() => { btn.textContent = '⎘'; btn.classList.remove('copied'); }, 1600);
+    } catch (err) {
+      showToast('Copy failed — try Ctrl+A, Ctrl+C', 'warn');
+    }
   });
 
   /* --- Move vault button --- */
