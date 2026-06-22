@@ -1133,6 +1133,19 @@ kbd {
   border-bottom: 1px solid var(--s-border);
   flex-shrink: 0;
 }
+.template-bar {
+  display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+  padding: 5px 40px; border-bottom: 1px solid rgba(255,255,255,0.04);
+  flex-shrink: 0; background: rgba(0,0,0,0.1);
+}
+.template-label { font-size: 9px; color: var(--t4); text-transform: uppercase; letter-spacing: 0.08em; flex-shrink: 0; }
+.tpl-btn {
+  font-size: 9.5px; color: var(--t3); background: transparent;
+  border: 1px solid var(--s-border); border-radius: 10px;
+  padding: 2px 8px; cursor: pointer;
+  transition: all 160ms var(--eo); flex-shrink: 0;
+}
+.tpl-btn:hover { border-color: rgba(212,146,46,0.4); color: var(--gold); background: rgba(212,146,46,0.08); }
 .fmt-btn {
   width: 32px; height: 28px;
   background: transparent; border: 1px solid transparent;
@@ -1816,6 +1829,14 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
         <button class="fmt-btn" data-fmt="quote" title="Blockquote">"</button>
         <button class="fmt-btn" data-fmt="task" title="Task item">&#9744;</button>
         <button class="fmt-btn" data-fmt="hr" title="Horizontal rule">&#9135;</button>
+      </div>
+      <div class="template-bar" id="template-bar">
+        <span class="template-label">Templates:</span>
+        <button class="tpl-btn" data-tpl="meeting">📋 Meeting</button>
+        <button class="tpl-btn" data-tpl="journal">📔 Journal</button>
+        <button class="tpl-btn" data-tpl="tasks">✅ Tasks</button>
+        <button class="tpl-btn" data-tpl="idea">💡 Idea</button>
+        <button class="tpl-btn" data-tpl="weekly">📅 Weekly</button>
       </div>
       <textarea id="body-input" placeholder="Start writing…" spellcheck="true"></textarea>
 
@@ -3761,6 +3782,46 @@ function wire() {
         dzUrlInput.value = '';
       }
     }
+  });
+
+  // Template bar
+  const TEMPLATES = {
+    meeting: {
+      title: 'Meeting Notes',
+      body: `## Attendees\n- \n\n## Agenda\n- \n\n## Discussion\n\n\n## Action Items\n- [ ] \n- [ ] \n\n## Next Steps\n`
+    },
+    journal: {
+      title: `Journal — ${new Date().toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' })}`,
+      body: `## How I'm feeling\n\n\n## What happened today\n\n\n## What I'm grateful for\n- \n\n## Tomorrow\n`
+    },
+    tasks: {
+      title: 'Task List',
+      body: `## Today\n- [ ] \n- [ ] \n- [ ] \n\n## This Week\n- [ ] \n- [ ] \n\n## Someday\n- [ ] \n`
+    },
+    idea: {
+      title: 'New Idea',
+      body: `## The Idea\n\n\n## Problem it solves\n\n\n## How it would work\n\n\n## Next step to explore\n`
+    },
+    weekly: {
+      title: `Weekly Review — Week of ${new Date().toLocaleDateString('en-US', { month:'short', day:'numeric' })}`,
+      body: `## Wins this week\n- \n\n## Challenges\n- \n\n## What I learned\n\n\n## Goals for next week\n- [ ] \n- [ ] \n`
+    },
+  };
+  document.getElementById('template-bar').addEventListener('click', e => {
+    const btn = e.target.closest('[data-tpl]');
+    if (!btn) return;
+    const tpl = TEMPLATES[btn.dataset.tpl];
+    if (!tpl) return;
+    const ti = document.getElementById('title-input');
+    const bi = document.getElementById('body-input');
+    if (ti && !ti.value) ti.value = tpl.title;
+    if (bi && !bi.value) {
+      bi.value = tpl.body;
+    } else if (bi) {
+      bi.value = bi.value + '\n\n' + tpl.body;
+    }
+    updateWordCount(); updateSaveBtn(); saveDraft();
+    bi.focus();
   });
 
   // Word count tracker
