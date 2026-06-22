@@ -2442,7 +2442,7 @@ function renderList() {
       <div class="ic-expand">
         <div class="ic-meta">
           <span class="ic-badge" style="${catStyle(it.category)}">${esc(it.category)}</span>
-          <span class="ic-date">${fmt(it.createdAt)}</span>
+          <span class="ic-date">${it.updatedAt ? '✏ ' + fmt(it.updatedAt) : fmt(it.createdAt)}</span>
         </div>
         <div class="ic-excerpt">${hl(excerpt.slice(0,115), S.search)}${excerpt.length > 115 ? '&hellip;' : ''}</div>
       </div>
@@ -2687,8 +2687,9 @@ async function _finishSave() {
     if (idx !== -1) {
       const old = S.items[idx];
       S.items[idx] = {
-        id: old.id, createdAt: old.createdAt,
+        id: old.id, createdAt: old.createdAt, updatedAt: Date.now(),
         title, body, category, type,
+        pinned: old.pinned,
         ...(url   ? { url }   : {}),
         ...(image ? { image } : {}),
       };
@@ -2736,7 +2737,9 @@ function openDetail(id) {
   document.getElementById('d-date').textContent    = fmt(it.createdAt);
   document.getElementById('d-title').textContent   = it.title || 'Untitled';
   document.getElementById('d-body').innerHTML      = renderMarkdown(it.body || '');
-  document.getElementById('d-saved').textContent   = 'Saved ' + fmtLong(it.createdAt);
+  document.getElementById('d-saved').textContent = it.updatedAt
+    ? 'Edited ' + fmt(it.updatedAt) + ' · Created ' + fmtLong(it.createdAt)
+    : 'Saved ' + fmtLong(it.createdAt);
   const rtEl = document.getElementById('d-readtime');
   if (rtEl) {
     const wCount = ((it.title || '') + ' ' + (it.body || '')).split(/\s+/).filter(Boolean).length;
