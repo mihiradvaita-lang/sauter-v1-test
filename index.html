@@ -476,6 +476,17 @@ html, body { height: 100%; background: var(--page); color: var(--t1); font-famil
 }
 .vault-tile:hover .vault-tile-delete { opacity: 1; }
 .vault-tile-delete:hover { background: rgba(196,91,91,0.85); color: #fff; }
+.vault-tile-rename {
+  position: absolute; top: -6px; left: -6px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(0,0,0,0.8); border: 1px solid var(--s-border2);
+  color: var(--t3); font-size: 10px; line-height: 17px;
+  text-align: center; cursor: pointer; z-index: 2;
+  opacity: 0; transition: opacity 160ms, background 160ms;
+  pointer-events: auto;
+}
+.vault-tile:hover .vault-tile-rename { opacity: 1; }
+.vault-tile-rename:hover { background: rgba(212,146,46,0.6); color: #fff; }
 
 /* ===== VIEW: VAULT INTERIOR ===== */
 #v-vault { display: flex; flex-direction: column; transform: translateX(30px); }
@@ -2178,6 +2189,7 @@ function renderVaultGrid() {
     ].filter(Boolean).join('') : '';
     tile.innerHTML = `
       ${isCustom ? '<button class="vault-tile-delete" title="Delete vault">×</button>' : ''}
+      ${isCustom ? '<button class="vault-tile-rename" title="Rename vault">✎</button>' : ''}
       <div class="vault-tile-icon" style="background:${color}18;color:${color};box-shadow:0 0 14px ${color}26;">${icon}</div>
       <div class="vault-tile-name">${esc(cat)}</div>
       ${previewText ? `<div class="vault-tile-preview">${esc(previewText)}</div>` : ''}
@@ -2194,6 +2206,27 @@ function renderVaultGrid() {
         }
         deleteCustomVault(cat);
         showToast(`"${cat}" deleted`, 'warn');
+        return;
+      }
+      if (e.target.closest('.vault-tile-rename')) {
+        e.stopPropagation();
+        const newName = prompt(`Rename vault "${cat}" to:`, cat);
+        if (!newName || !newName.trim() || newName.trim() === cat) return;
+        const trimmed = newName.trim().slice(0, 30);
+        if (allVaults().includes(trimmed)) { showToast('A vault with that name already exists', 'warn'); return; }
+        // Rename in customVaults array
+        const vObj = S.customVaults.find(v => v.name === cat);
+        if (vObj) {
+          const emojiMatch = trimmed.match(/^(\p{Emoji_Presentation}|\p{Emoji}️?)/u);
+          vObj.icon = emojiMatch ? emojiMatch[0] : vObj.icon;
+          vObj.name = trimmed;
+        }
+        // Migrate all items from old category name to new
+        S.items.forEach(it => { if (it.category === cat) it.category = trimmed; });
+        store();
+        storeCustomVaults();
+        renderCatFilters(); renderList(); renderVaultGrid();
+        showToast(`Renamed to "${trimmed}"`, 'success');
         return;
       }
       const cv = document.getElementById('gravity-canvas');
