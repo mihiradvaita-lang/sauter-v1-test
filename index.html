@@ -2782,7 +2782,8 @@ function openVaultInterior(cat) {
   const vaultEl = document.getElementById('v-vault');
   vaultEl.style.setProperty('--vi-accent', color);
 
-  const countLabel = viQ
+  const isFiltered = viQ || (vtf !== 'all');
+  const countLabel = isFiltered && items.length < allItems.length
     ? `${items.length}/${allItems.length}`
     : `${items.length}`;
   document.getElementById('vi-title').innerHTML =
@@ -2924,7 +2925,7 @@ function openVaultInterior(cat) {
           <div class="vi-card-title">${it.pinned ? '<span class="vi-pin-badge" title="Pinned">📌</span>' : ''}${highlightSearch(it.title || 'Untitled')}</div>
           ${snippet ? `<div class="vi-card-snippet">${it.type === 'link' ? '<span class="vi-url-tag">' + esc(snippet) + '</span>' : highlightSearch(snippet) + (rawSnippet.length > 90 ? '…' : '')}</div>` : ''}
           <div class="vi-card-meta">
-            <span>${fmt(it.createdAt)}</span>
+            <span title="${sortMode === 'edited' && it.updatedAt ? 'Last edited' : 'Created'}">${fmt(sortMode === 'edited' && it.updatedAt ? it.updatedAt : it.createdAt)}</span>
             ${it.type === 'note' && wordCount2 > 0 ? `<span class="vi-wc">${wordCount2}w</span>` : ''}
             ${it.type === 'link' && it.url ? `<a class="vi-card-open-link" href="${esc(it.url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">↗ open</a>` : ''}
           </div>
