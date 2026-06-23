@@ -1805,6 +1805,23 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
 }
 .main-bottom-bar > * { pointer-events: auto; }
 
+/* Recent Vaults strip */
+.recent-vaults-strip {
+  display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;
+  max-width: 520px; margin: 0 auto 12px;
+}
+.rv-chip {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 12px 5px 9px; border-radius: 20px;
+  font-size: 11.5px; font-weight: 600; letter-spacing: 0.03em;
+  cursor: pointer; border: 1px solid transparent;
+  transition: opacity 130ms var(--eo), transform 130ms var(--eo);
+  pointer-events: auto;
+}
+.rv-chip:hover { opacity: 0.82; transform: translateY(-1px); }
+.rv-chip-icon { font-size: 12px; line-height: 1; }
+.rv-label { display: flex; align-items: center; gap: 3px; font-size: 10px; font-weight: 500; color: var(--t4); margin: 0 auto 6px; text-align: center; justify-content: center; letter-spacing: 0.07em; text-transform: uppercase; }
+
 .main-search-wrap {
   position: relative; max-width: 520px; margin: 0 auto 12px;
 }
@@ -2060,6 +2077,8 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
 
       <!-- Main screen: search + recent items -->
       <div class="main-bottom-bar" id="main-bottom-bar">
+        <!-- Recent vaults strip -->
+        <div id="recent-vaults-strip" class="recent-vaults-strip" style="display:none"></div>
         <div class="main-search-wrap">
           <i class="main-search-ico">&#8981;</i>
           <input id="main-search-input" type="text" placeholder="Search your notes…" autocomplete="off" spellcheck="false">
@@ -2099,12 +2118,19 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
           <div class="status-dot" id="status-dot"></div>
           <span id="status-txt">Checking AI…</span>
           <div class="ai-help-pop" id="ai-help-pop">
-            <strong>AI is offline</strong>
-            Start Ollama locally:
-            <code>OLLAMA_ORIGINS=* ollama serve</code>
-            Pull the Qwen model (tiny, fast):
-            <code>ollama pull qwen2.5:0.5b</code>
-            <button class="ai-retry-btn" id="ai-retry-btn">↺ Retry connection</button>
+            <strong id="ai-help-title">AI is offline</strong>
+            <div id="ai-help-steps">
+              <div style="margin:6px 0 4px;font-size:10px;color:var(--t4);letter-spacing:0.05em;text-transform:uppercase">Fix in 2 steps:</div>
+              <div style="margin-bottom:4px;font-size:11.5px;color:var(--t3)">① Start Ollama with CORS:</div>
+              <code>OLLAMA_ORIGINS=* ollama serve</code>
+              <div style="margin:6px 0 4px;font-size:11.5px;color:var(--t3)">② Pull the model (one-time, 400MB):</div>
+              <code>ollama pull qwen2.5:0.5b</code>
+            </div>
+            <div id="ai-help-cors" style="display:none">
+              <div style="margin:6px 0 4px;font-size:11.5px;color:var(--t3)">Ollama is running but CORS is missing. Restart with:</div>
+              <code>OLLAMA_ORIGINS=* ollama serve</code>
+            </div>
+            <button class="ai-retry-btn" id="ai-retry-btn">↺ Retry</button>
           </div>
         </div>
       </div>
@@ -2444,6 +2470,7 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
 const STORE_KEY    = 'sauter_items';
 const CV_KEY       = 'sauter_custom_vaults';
 const VS_KEY       = 'sauter_vault_sorts';
+const RV_KEY       = 'sauter_recent_vaults';
 const OLLAMA       = 'http://localhost:11434';
 const OLLAMA_MODEL = 'qwen2.5:0.5b';          // smallest Qwen — local categorisation + chat
 const MODEL_CHAIN  = [OLLAMA_MODEL, 'qwen2.5', 'qwen2', 'qwen', 'llama3.2', 'phi3'];
@@ -2472,6 +2499,7 @@ let S = {
   mainSearch: '',
   _viSearch: '', _viTypeFilter: 'all', _viSort: 'newest',
   _vaultSortModes: {},
+  _recentVaults: [],
 };
 
 /* ---------- STORAGE ---------- */
@@ -2483,6 +2511,13 @@ function storeCustomVaults() { localStorage.setItem(CV_KEY, JSON.stringify(S.cus
 
 function loadVaultSorts()  { try { return JSON.parse(localStorage.getItem(VS_KEY) || '{}'); } catch { return {}; } }
 function storeVaultSorts() { localStorage.setItem(VS_KEY, JSON.stringify(S._vaultSortModes)); }
+
+function loadRecentVaults()  { try { return JSON.parse(localStorage.getItem(RV_KEY) || '[]'); } catch { return []; } }
+function storeRecentVaults() { localStorage.setItem(RV_KEY, JSON.stringify(S._recentVaults)); }
+function trackVaultVisit(cat) {
+  S._recentVaults = [cat, ...S._recentVaults.filter(v => v !== cat)].slice(0, 6);
+  storeRecentVaults();
+}
 function allVaults() { return [...CATS, ...S.customVaults.map(v => v.name)]; }
 function vaultColor(cat) { return CAT_COLORS[cat] || S.customVaults.find(v => v.name === cat)?.color || '#8A7A60'; }
 function vaultIcon(cat)  { return CAT_ICONS[cat]  || S.customVaults.find(v => v.name === cat)?.icon  || '◎'; }
@@ -2703,7 +2738,9 @@ function renderVaultGrid() {
           (tr.top  + tr.height / 2) - r.top
         );
       }
-      openVaultInterior(cat);
+      trackVaultVisit(cat);
+      // Delay navigation so ripple plays visibly first
+      setTimeout(() => openVaultInterior(cat), 340);
     });
 
     grid.appendChild(tile);
@@ -2754,6 +2791,7 @@ function renderVaultGrid() {
 
 /* ---------- VAULT INTERIOR ---------- */
 function openVaultInterior(cat) {
+  trackVaultVisit(cat);
   // Clear search and restore sort preference when switching vaults
   if (S.openVault !== cat) {
     S._viSearch = '';
@@ -3756,6 +3794,40 @@ function renderRecentItems() {
   const viewAllBtn = document.getElementById('recent-view-all');
   if (!list) return;
 
+  // Render recent vaults strip
+  const rvStrip = document.getElementById('recent-vaults-strip');
+  if (rvStrip) {
+    const validVaults = S._recentVaults.filter(v =>
+      S.items.some(it => it.category === v) || S.customVaults.some(cv => cv.name === v)
+    ).slice(0, 5);
+    if (validVaults.length > 0) {
+      rvStrip.innerHTML = validVaults.map(cat => {
+        const color = vaultColor(cat);
+        const icon  = vaultIcon(cat);
+        return `<button class="rv-chip" data-cat="${esc(cat)}" style="background:${color}18;border-color:${color}35;color:${color}" title="Open ${esc(cat)}">
+          <span class="rv-chip-icon">${icon}</span>${esc(cat)}
+        </button>`;
+      }).join('');
+      rvStrip.style.display = '';
+      rvStrip.querySelectorAll('.rv-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const cat = btn.dataset.cat;
+          if (!cat) return;
+          const cv = document.getElementById('gravity-canvas');
+          if (cv) {
+            const r = cv.getBoundingClientRect();
+            const b = btn.getBoundingClientRect();
+            Gravity.ripple((b.left + b.width / 2) - r.left, (b.top + b.height / 2) - r.top);
+          }
+          trackVaultVisit(cat);
+          setTimeout(() => openVaultInterior(cat), 300);
+        });
+      });
+    } else {
+      rvStrip.style.display = 'none';
+    }
+  }
+
   updateHomeTagline();
 
   // Draft resume banner
@@ -3975,18 +4047,28 @@ function updateOllamaUI() {
   if (chatDot)  chatDot.className  = 'chat-bar-dot' + dotClass;
   if (chatNote) chatNote.textContent = S.aiOnline ? '' : (S._aiCorsBlocked ? '(CORS blocked)' : '(offline)');
 
+  // Update help popup content per state
+  const helpTitle  = document.getElementById('ai-help-title');
+  const helpSteps  = document.getElementById('ai-help-steps');
+  const helpCors   = document.getElementById('ai-help-cors');
   if (S.aiOnline) {
     txt.textContent = '✦ AI ready — ' + OLLAMA_MODEL;
     pill.classList.add('online');
     pill.classList.remove('cors-warn');
   } else if (S._aiCorsBlocked) {
-    txt.textContent = 'Ollama found — needs CORS';
+    txt.textContent = 'Ollama found — CORS needed';
     pill.classList.remove('online');
     pill.classList.add('cors-warn');
+    if (helpTitle) helpTitle.textContent = '⚠ CORS not configured';
+    if (helpSteps) helpSteps.style.display = 'none';
+    if (helpCors)  helpCors.style.display  = '';
   } else {
     txt.textContent = 'AI offline';
     pill.classList.remove('online');
     pill.classList.remove('cors-warn');
+    if (helpTitle) helpTitle.textContent = 'AI is offline';
+    if (helpSteps) helpSteps.style.display = '';
+    if (helpCors)  helpCors.style.display  = 'none';
   }
 
   // Refresh compose category row visibility
@@ -5111,8 +5193,8 @@ const Gravity = (() => {
 
     /* Advance ripples */
     for (let ri = ripples.length - 1; ri >= 0; ri--) {
-      ripples[ri].r    += 5.5;
-      ripples[ri].life -= 0.022;
+      ripples[ri].r    += (ripples[ri].speed || 5.5);
+      ripples[ri].life -= 0.018;
       if (ripples[ri].life <= 0) ripples.splice(ri, 1);
     }
 
@@ -5152,9 +5234,11 @@ const Gravity = (() => {
         let ripBoost = 0;
         for (const rp of ripples) {
           const rdx = px - rp.x, rdy = py - rp.y;
+          const w = rp.width || 28;
+          const s = rp.strength || 0.7;
           const ringDist = Math.abs(Math.sqrt(rdx * rdx + rdy * rdy) - rp.r);
-          if (ringDist < 28) {
-            ripBoost += (1 - ringDist / 28) * rp.life * 0.7;
+          if (ringDist < w) {
+            ripBoost += (1 - ringDist / w) * rp.life * s;
           }
         }
 
@@ -5197,7 +5281,10 @@ const Gravity = (() => {
       if (animId) { cancelAnimationFrame(animId); animId = null; }
     },
     ripple(x, y) {
-      ripples.push({ x, y, r: 0, life: 1.0 });
+      // Primary strong ring + two trailing rings for a rich effect
+      ripples.push({ x, y, r: 0, life: 1.0, speed: 6.5, width: 34, strength: 1.0 });
+      ripples.push({ x, y, r: 0, life: 0.75, speed: 4.2, width: 22, strength: 0.6 });
+      ripples.push({ x, y, r: 0, life: 0.5, speed: 2.8, width: 14, strength: 0.35 });
     },
     setTileGlows(positions) {
       tileGlows.length = 0;
@@ -5213,6 +5300,7 @@ function init() {
   S.items = load();
   S.customVaults = loadCustomVaults();
   S._vaultSortModes = loadVaultSorts();
+  S._recentVaults = loadRecentVaults();
   wire();
   renderCatFilters();
   renderList();
