@@ -1865,6 +1865,9 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
 .recent-view-all:hover { color: var(--gold); }
 .recent-list { display: flex; flex-direction: column; gap: 3px; }
 .recent-search-header { font-size: 10px; color: var(--t4); letter-spacing: 0.04em; padding: 2px 0 6px 2px; }
+.home-section-label { font-size: 10px; color: var(--t4); letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 0 5px 2px; }
+.home-section-label:not(:first-child) { margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--s-border1); }
+.pinned-home-item { border-left: 2px solid rgba(212,146,46,0.35) !important; }
 .recent-item {
   display: flex; align-items: center; gap: 10px;
   padding: 7px 12px; border-radius: 9px;
@@ -2385,6 +2388,14 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
         <div class="kb-row"><kbd>/</kbd><span>Search vault</span></div>
         <div class="kb-row"><kbd>Esc</kbd><span>Back to vaults</span></div>
       </div>
+      <div class="kb-section">
+        <div class="kb-section-title">In Detail View</div>
+        <div class="kb-row"><kbd>E</kbd><span>Edit note</span></div>
+        <div class="kb-row"><kbd>P</kbd><span>Pin / unpin</span></div>
+        <div class="kb-row"><kbd>M</kbd><span>Move to vault</span></div>
+        <div class="kb-row"><kbd>D</kbd><span>Duplicate note</span></div>
+        <div class="kb-row"><kbd>F</kbd><span>Focus mode</span></div>
+      </div>
     </div>
   </div>
 </div>
@@ -2407,6 +2418,8 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
     <div class="kbd-row"><span class="kbd-desc">Prev / next note</span><span class="kbd-keys"><kbd>←</kbd><kbd>→</kbd></span></div>
     <div class="kbd-row"><span class="kbd-desc">Edit note</span><span class="kbd-keys"><kbd>E</kbd></span></div>
     <div class="kbd-row"><span class="kbd-desc">Pin / unpin</span><span class="kbd-keys"><kbd>P</kbd></span></div>
+    <div class="kbd-row"><span class="kbd-desc">Move to vault</span><span class="kbd-keys"><kbd>M</kbd></span></div>
+    <div class="kbd-row"><span class="kbd-desc">Duplicate note</span><span class="kbd-keys"><kbd>D</kbd></span></div>
     <div class="kbd-row"><span class="kbd-desc">Focus mode</span><span class="kbd-keys"><kbd>F</kbd></span></div>
     <div class="kbd-row"><span class="kbd-desc">Back to vault</span><span class="kbd-keys"><kbd>Esc</kbd></span></div>
     <button class="kbd-close-btn" id="kbd-close-btn">Close</button>
@@ -3509,7 +3522,12 @@ function openDetail(id) {
   dBadgeEl.style.cssText = catStyle(it.category) + ';cursor:pointer;';
   dBadgeEl.title = `Go to vault: ${it.category}`;
   dBadgeEl.onclick = () => openVaultInterior(it.category);
-  document.getElementById('d-date').textContent    = fmt(it.createdAt);
+  const dateEl = document.getElementById('d-date');
+  if (it.updatedAt && it.updatedAt !== it.createdAt) {
+    dateEl.innerHTML = `${fmt(it.createdAt)} <span style="color:var(--t4);font-size:10px;margin-left:4px">· edited ${fmt(it.updatedAt)}</span>`;
+  } else {
+    dateEl.textContent = fmt(it.createdAt);
+  }
   document.getElementById('d-title').textContent   = it.title || 'Untitled';
   document.getElementById('d-body').innerHTML      = renderMarkdown(it.body || '');
   // Highlight search query in body if coming from vault search
@@ -3909,6 +3927,39 @@ function renderRecentItems() {
   if (q && !items.length) {
     list.innerHTML = '<div class="recent-empty">Nothing matched — try different words</div>';
     return;
+  }
+
+  // Pinned notes strip (home, no search)
+  if (!q) {
+    const pinnedAll = S.items.filter(it => it.pinned).slice(0, 4);
+    if (pinnedAll.length > 0) {
+      const ph = document.createElement('div');
+      ph.className = 'home-section-label';
+      ph.innerHTML = '<span>📌 Pinned</span>';
+      list.appendChild(ph);
+      pinnedAll.forEach((it, i) => {
+        const badge = it.type === 'link' ? '🔗' : it.type === 'photo' ? '🖼' : '📝';
+        const color = vaultColor(it.category);
+        const el = document.createElement('div');
+        el.className = 'recent-item pinned-home-item';
+        el.style.animationDelay = (i * 22) + 'ms';
+        el.innerHTML = `
+          <div class="ri-left"><span class="ri-type-badge" style="background:rgba(212,146,46,0.14);color:var(--gold)">${badge}</span></div>
+          <div class="ri-body">
+            <div class="ri-title">${esc(it.title || 'Untitled')}</div>
+            <div class="ri-meta">
+              <span class="ri-cat" style="color:${color}">${esc(it.category)}</span>
+              <span class="ri-date">${fmt(it.createdAt)}</span>
+            </div>
+          </div>`;
+        el.addEventListener('click', () => openDetail(it.id));
+        list.appendChild(el);
+      });
+      const sep = document.createElement('div');
+      sep.className = 'home-section-label';
+      sep.innerHTML = '<span>Recent</span>';
+      list.appendChild(sep);
+    }
   }
 
   // When searching, show all matches; otherwise cap at 10 most recent
@@ -4313,6 +4364,18 @@ document.addEventListener('keydown', e => {
   if (e.key === 'p' && S.view === 'detail' && S.activeId && !e.target.closest('input, textarea') && !ctrl) {
     e.preventDefault();
     document.getElementById('pin-detail-btn')?.click();
+    return;
+  }
+  // M: move note to another vault
+  if (e.key === 'm' && S.view === 'detail' && S.activeId && !e.target.closest('input, textarea') && !ctrl) {
+    e.preventDefault();
+    document.getElementById('move-vault-btn')?.click();
+    return;
+  }
+  // D: duplicate note from detail view
+  if (e.key === 'd' && S.view === 'detail' && S.activeId && !e.target.closest('input, textarea') && !ctrl) {
+    e.preventDefault();
+    document.getElementById('dup-note-btn')?.click();
     return;
   }
 
