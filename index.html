@@ -1534,6 +1534,13 @@ kbd {
   transition: all 200ms var(--eo); flex-shrink: 0;
 }
 .dup-note-btn:hover { color: var(--t2); border-color: var(--s-border2); }
+.pin-detail-btn {
+  padding: 5px 10px; border-radius: 7px; font-size: 12px; cursor: pointer;
+  background: none; border: 1px solid var(--s-border); color: var(--t3);
+  transition: all 140ms var(--eo);
+}
+.pin-detail-btn:hover { color: var(--t2); border-color: var(--s-border2); }
+.pin-detail-btn.pinned { color: var(--gold); border-color: rgba(212,146,46,0.3); }
 
 /* ===== CHAT VIEW ===== */
 #v-chat { display: flex; flex-direction: column; background: var(--page); }
@@ -1788,6 +1795,7 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
 }
 .recent-view-all:hover { color: var(--gold); }
 .recent-list { display: flex; flex-direction: column; gap: 3px; }
+.recent-search-header { font-size: 10px; color: var(--t4); letter-spacing: 0.04em; padding: 2px 0 6px 2px; }
 .recent-item {
   display: flex; align-items: center; gap: 10px;
   padding: 7px 12px; border-radius: 9px;
@@ -2144,6 +2152,7 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
           <button class="move-vault-btn" id="move-vault-btn">⤲ Move</button>
           <button class="copy-note-btn" id="copy-note-btn" title="Copy to clipboard">⎘</button>
           <button class="dup-note-btn" id="dup-note-btn" title="Duplicate note">⧉</button>
+          <button class="pin-detail-btn" id="pin-detail-btn" title="Pin to top (P)">📌</button>
         </div>
         <div class="del-wrap">
           <div class="del-confirm-wrap" id="del-confirm">
@@ -3384,6 +3393,13 @@ function openDetail(id) {
     else          { imgWrap.style.display = 'none'; }
   }
 
+  // Pin button state
+  const pinDetailBtn = document.getElementById('pin-detail-btn');
+  if (pinDetailBtn) {
+    pinDetailBtn.classList.toggle('pinned', !!it.pinned);
+    pinDetailBtn.title = it.pinned ? 'Unpin (P)' : 'Pin to top (P)';
+  }
+
   // Word count in header
   const wcEl = document.getElementById('d-wordcount');
   if (wcEl) {
@@ -3679,7 +3695,15 @@ function renderRecentItems() {
     return;
   }
 
-  items.slice(0, 10).forEach((it, i) => {
+  // When searching, show all matches; otherwise cap at 10 most recent
+  const displayItems = q ? items : items.slice(0, 10);
+  if (q && items.length > 0) {
+    const countEl = document.createElement('div');
+    countEl.className = 'recent-search-header';
+    countEl.textContent = `${items.length} result${items.length === 1 ? '' : 's'} for "${q}"`;
+    list.appendChild(countEl);
+  }
+  displayItems.forEach((it, i) => {
     const badge = it.type === 'link' ? '🔗' : it.type === 'photo' ? '🖼' : '📝';
     const pillBg = it.type === 'link' ? 'rgba(91,155,180,0.15)' : it.type === 'photo' ? 'rgba(139,126,200,0.15)' : 'rgba(212,146,46,0.12)';
     const pillColor = it.type === 'link' ? '#5B9BB4' : it.type === 'photo' ? '#8B7EC8' : 'var(--gold)';
@@ -4050,6 +4074,11 @@ document.addEventListener('keydown', e => {
   if (e.key === 'e' && S.view === 'detail' && S.activeId && !e.target.closest('input, textarea') && !ctrl) {
     e.preventDefault();
     openEdit(S.activeId);
+    return;
+  }
+  if (e.key === 'p' && S.view === 'detail' && S.activeId && !e.target.closest('input, textarea') && !ctrl) {
+    e.preventDefault();
+    document.getElementById('pin-detail-btn')?.click();
     return;
   }
 
@@ -4718,6 +4747,18 @@ function wire() {
     renderCatFilters(); renderList(); renderRecentItems(); renderVaultGrid();
     openDetail(copy.id);
     showToast('Note duplicated', 'success');
+  });
+
+  /* --- Pin/unpin button in detail view --- */
+  document.getElementById('pin-detail-btn').addEventListener('click', () => {
+    const it2 = S.items.find(i => i.id === S.activeId);
+    if (!it2) return;
+    it2.pinned = !it2.pinned;
+    store();
+    renderList(); renderRecentItems();
+    if (S.openVault) openVaultInterior(S.openVault);
+    openDetail(S.activeId);
+    showToast(it2.pinned ? '📌 Pinned to top' : 'Unpinned', 'success');
   });
 
   /* --- Move vault button --- */
