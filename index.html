@@ -2443,6 +2443,7 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
 
 const STORE_KEY    = 'sauter_items';
 const CV_KEY       = 'sauter_custom_vaults';
+const VS_KEY       = 'sauter_vault_sorts';
 const OLLAMA       = 'http://localhost:11434';
 const OLLAMA_MODEL = 'qwen2.5:0.5b';          // smallest Qwen — local categorisation + chat
 const MODEL_CHAIN  = [OLLAMA_MODEL, 'qwen2.5', 'qwen2', 'qwen', 'llama3.2', 'phi3'];
@@ -2469,7 +2470,8 @@ let S = {
   vaultContext: null,
   editId: null,
   mainSearch: '',
-  _viSearch: '', _viTypeFilter: 'all',
+  _viSearch: '', _viTypeFilter: 'all', _viSort: 'newest',
+  _vaultSortModes: {},
 };
 
 /* ---------- STORAGE ---------- */
@@ -2478,6 +2480,9 @@ function store() { localStorage.setItem(STORE_KEY, JSON.stringify(S.items)); }
 function uid()   { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function loadCustomVaults()  { try { return JSON.parse(localStorage.getItem(CV_KEY) || '[]'); } catch { return []; } }
 function storeCustomVaults() { localStorage.setItem(CV_KEY, JSON.stringify(S.customVaults)); }
+
+function loadVaultSorts()  { try { return JSON.parse(localStorage.getItem(VS_KEY) || '{}'); } catch { return {}; } }
+function storeVaultSorts() { localStorage.setItem(VS_KEY, JSON.stringify(S._vaultSortModes)); }
 function allVaults() { return [...CATS, ...S.customVaults.map(v => v.name)]; }
 function vaultColor(cat) { return CAT_COLORS[cat] || S.customVaults.find(v => v.name === cat)?.color || '#8A7A60'; }
 function vaultIcon(cat)  { return CAT_ICONS[cat]  || S.customVaults.find(v => v.name === cat)?.icon  || '◎'; }
@@ -2749,10 +2754,11 @@ function renderVaultGrid() {
 
 /* ---------- VAULT INTERIOR ---------- */
 function openVaultInterior(cat) {
-  // Clear search when switching vaults
+  // Clear search and restore sort preference when switching vaults
   if (S.openVault !== cat) {
     S._viSearch = '';
     S._viTypeFilter = 'all';
+    S._viSort = S._vaultSortModes[cat] || 'newest';
     const inp = document.getElementById('vi-search-input');
     if (inp) { inp.value = ''; }
     const clr = document.getElementById('vi-search-clear');
@@ -2760,6 +2766,13 @@ function openVaultInterior(cat) {
   }
   S.openVault = cat;
   S.vaultContext = cat;
+  // Sync sort menu selected state
+  const viSortMenu2 = document.getElementById('vi-sort-menu');
+  if (viSortMenu2) {
+    viSortMenu2.querySelectorAll('.vi-sort-opt').forEach(o => {
+      o.classList.toggle('selected', o.dataset.sort === (S._viSort || 'newest'));
+    });
+  }
   const color = vaultColor(cat);
   const icon  = vaultIcon(cat);
   const allItems = S.items.filter(it => it.category === cat);
@@ -4428,6 +4441,11 @@ function wire() {
     const opt = e.target.closest('.vi-sort-opt');
     if (!opt) return;
     S._viSort = opt.dataset.sort;
+    // Persist sort preference per vault
+    if (S.openVault) {
+      S._vaultSortModes[S.openVault] = S._viSort;
+      storeVaultSorts();
+    }
     viSortMenu.querySelectorAll('.vi-sort-opt').forEach(o => o.classList.toggle('selected', o === opt));
     viSortMenu.classList.remove('open');
     viSortBtn.classList.remove('active');
@@ -5194,6 +5212,7 @@ const Gravity = (() => {
 function init() {
   S.items = load();
   S.customVaults = loadCustomVaults();
+  S._vaultSortModes = loadVaultSorts();
   wire();
   renderCatFilters();
   renderList();
