@@ -1866,7 +1866,9 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
 .recent-vault-chip {
   font-size: 8.5px; padding: 2px 7px; border-radius: 20px; font-weight: 600;
   letter-spacing: 0.06em; text-transform: uppercase; flex-shrink: 0;
+  cursor: pointer; transition: opacity 120ms var(--eo);
 }
+.recent-vault-chip:hover { opacity: 0.75; }
 .recent-date { font-size: 10px; color: var(--t4); flex-shrink: 0; }
 .recent-empty { text-align: center; color: var(--t4); font-size: 12px; padding: 10px 0; }
 .recent-snippet { font-size: 10px; color: var(--t4); font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 120px; }
@@ -3854,10 +3856,18 @@ function renderRecentItems() {
       <span class="recent-type-pill" style="background:${pillBg};color:${pillColor}">${badge}</span>
       <span class="recent-title-txt">${hl(it.title || 'Untitled', q)}</span>
       ${bodySnippet}
-      <span class="recent-vault-chip" style="color:${color};background:${color}1a;border:1px solid ${color}44;">${esc(it.category)}</span>
+      <span class="recent-vault-chip" data-cat="${esc(it.category)}" style="color:${color};background:${color}1a;border:1px solid ${color}44;" title="Open ${esc(it.category)} vault">${esc(it.category)}</span>
       <span class="recent-date">${fmt(it.updatedAt || it.createdAt)}</span>
     `;
-    el.addEventListener('click', () => openDetail(it.id));
+    el.addEventListener('click', (ev) => {
+      if (ev.target.closest('.recent-vault-chip')) {
+        ev.stopPropagation();
+        const cat = ev.target.closest('.recent-vault-chip').dataset.cat;
+        if (cat) openVaultInterior(cat);
+        return;
+      }
+      openDetail(it.id);
+    });
     list.appendChild(el);
   });
 }
