@@ -2181,6 +2181,7 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
         <div class="vi-sort-menu" id="vi-sort-menu">
           <div class="vi-sort-opt selected" data-sort="newest">🕐 Newest first</div>
           <div class="vi-sort-opt" data-sort="oldest">🕰 Oldest first</div>
+          <div class="vi-sort-opt" data-sort="edited">✏️ Recently edited</div>
           <div class="vi-sort-opt" data-sort="alpha">🔤 A → Z</div>
         </div>
         <button class="vi-ai-btn" id="vi-ai-btn" title="✦ Summarize this vault with AI">✦</button>
@@ -2740,6 +2741,7 @@ function openVaultInterior(cat) {
       if (!a.pinned && b.pinned) return 1;
       if (sortMode === 'oldest') return (a.createdAt || 0) - (b.createdAt || 0);
       if (sortMode === 'alpha')  return (a.title || '').localeCompare(b.title || '');
+      if (sortMode === 'edited') return (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0);
       return (b.createdAt || 0) - (a.createdAt || 0); // newest first (default)
     });
 
@@ -2771,8 +2773,8 @@ function openVaultInterior(cat) {
 
     sorted.forEach((it, i) => {
       // Insert date group header
-      if (!viQ && (sortMode === 'newest' || sortMode === 'oldest') && !it.pinned) {
-        const group = getGroup(it.createdAt);
+      if (!viQ && (sortMode === 'newest' || sortMode === 'oldest' || sortMode === 'edited') && !it.pinned) {
+        const group = getGroup(sortMode === 'edited' ? (it.updatedAt || it.createdAt) : it.createdAt);
         if (group && group !== lastGroup) {
           lastGroup = group;
           const hdr = document.createElement('div');
@@ -3430,6 +3432,7 @@ function openDetail(id) {
       if (!a.pinned && b.pinned) return 1;
       if (sm === 'oldest') return (a.createdAt || 0) - (b.createdAt || 0);
       if (sm === 'alpha')  return (a.title || '').localeCompare(b.title || '');
+      if (sm === 'edited') return (b.updatedAt || b.createdAt || 0) - (a.updatedAt || a.createdAt || 0);
       return (b.createdAt || 0) - (a.createdAt || 0);
     });
     const navIdx = navItems.findIndex(x => x.id === id);
