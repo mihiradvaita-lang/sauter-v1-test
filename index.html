@@ -868,6 +868,50 @@ kbd {
 .vi-ai-summary-close:hover { color: var(--t2); }
 
 /* ===== VAULT CREATE MODAL ===== */
+.kbd-help-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
+  display: none; align-items: center; justify-content: center;
+  opacity: 0; transition: opacity 180ms var(--eo);
+}
+.kbd-help-overlay.open { display: flex; }
+.kbd-help-overlay.visible { opacity: 1; }
+.kbd-help-sheet {
+  background: var(--s-panel); border: 1px solid var(--s-border2);
+  border-radius: 14px; padding: 24px 28px; max-width: 520px; width: 90%;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+  transform: scale(0.93) translateY(8px);
+  transition: transform 200ms var(--eo);
+}
+.kbd-help-overlay.visible .kbd-help-sheet { transform: scale(1) translateY(0); }
+.kbd-help-sheet h3 {
+  font-size: 13px; font-weight: 600; color: var(--t2); letter-spacing: 0.05em;
+  text-transform: uppercase; margin: 0 0 16px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--s-border);
+}
+.kbd-section-label {
+  font-size: 10px; color: var(--t4); letter-spacing: 0.1em; text-transform: uppercase;
+  margin: 14px 0 6px;
+}
+.kbd-section-label:first-of-type { margin-top: 0; }
+.kbd-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.kbd-row:last-child { border-bottom: none; }
+.kbd-desc { font-size: 12px; color: var(--t3); }
+.kbd-keys { display: flex; gap: 4px; }
+.kbd-keys kbd {
+  font-size: 10px; background: var(--s-card); border: 1px solid var(--s-border2);
+  border-bottom-width: 2px; border-radius: 4px; padding: 2px 6px;
+  color: var(--t2); font-family: inherit; line-height: 1.5;
+}
+.kbd-close-btn {
+  margin-top: 18px; width: 100%; padding: 8px; border-radius: 8px;
+  background: none; border: 1px solid var(--s-border); color: var(--t3);
+  font-size: 12px; cursor: pointer; transition: all 140ms var(--eo);
+}
+.kbd-close-btn:hover { background: var(--s-border); color: var(--t2); }
 .vault-create-overlay {
   position: fixed; inset: 0; z-index: 600;
   background: rgba(6,4,2,0.72); backdrop-filter: blur(6px);
@@ -2304,6 +2348,29 @@ mark { background: rgba(212,146,46,0.28); color: var(--t1); border-radius: 2px; 
 </div>
 
 <!-- VAULT CREATE MODAL -->
+<div class="kbd-help-overlay" id="kbd-help-overlay">
+  <div class="kbd-help-sheet">
+    <h3>Keyboard Shortcuts</h3>
+    <div class="kbd-section-label">Global</div>
+    <div class="kbd-row"><span class="kbd-desc">New note</span><span class="kbd-keys"><kbd>⌘</kbd><kbd>N</kbd></span></div>
+    <div class="kbd-row"><span class="kbd-desc">Go home</span><span class="kbd-keys"><kbd>G</kbd></span></div>
+    <div class="kbd-row"><span class="kbd-desc">Show shortcuts</span><span class="kbd-keys"><kbd>?</kbd></span></div>
+    <div class="kbd-section-label">Vault Interior</div>
+    <div class="kbd-row"><span class="kbd-desc">Navigate notes</span><span class="kbd-keys"><kbd>J</kbd><kbd>K</kbd></span></div>
+    <div class="kbd-row"><span class="kbd-desc">Open focused note</span><span class="kbd-keys"><kbd>Enter</kbd></span></div>
+    <div class="kbd-row"><span class="kbd-desc">Search</span><span class="kbd-keys"><kbd>/</kbd></span></div>
+    <div class="kbd-row"><span class="kbd-desc">New note in vault</span><span class="kbd-keys"><kbd>N</kbd></span></div>
+    <div class="kbd-row"><span class="kbd-desc">Back / clear search</span><span class="kbd-keys"><kbd>Esc</kbd></span></div>
+    <div class="kbd-section-label">Detail View</div>
+    <div class="kbd-row"><span class="kbd-desc">Prev / next note</span><span class="kbd-keys"><kbd>←</kbd><kbd>→</kbd></span></div>
+    <div class="kbd-row"><span class="kbd-desc">Edit note</span><span class="kbd-keys"><kbd>E</kbd></span></div>
+    <div class="kbd-row"><span class="kbd-desc">Pin / unpin</span><span class="kbd-keys"><kbd>P</kbd></span></div>
+    <div class="kbd-row"><span class="kbd-desc">Focus mode</span><span class="kbd-keys"><kbd>F</kbd></span></div>
+    <div class="kbd-row"><span class="kbd-desc">Back to vault</span><span class="kbd-keys"><kbd>Esc</kbd></span></div>
+    <button class="kbd-close-btn" id="kbd-close-btn">Close</button>
+  </div>
+</div>
+
 <div class="vault-create-overlay" id="vault-create-overlay">
   <div class="vault-create-sheet">
     <h3>New Vault</h3>
@@ -4093,10 +4160,14 @@ document.addEventListener('keydown', e => {
     return;
   }
 
-  // ?: show keyboard shortcuts
+  // ?: show keyboard shortcuts modal
   if (e.key === '?' && !e.target.closest('input, textarea') && !ctrl) {
     e.preventDefault();
-    showToast('⌘N new · E edit · G home · / search · J/K nav · Esc back', 'success');
+    const kbdOverlay = document.getElementById('kbd-help-overlay');
+    if (kbdOverlay) {
+      kbdOverlay.classList.add('open');
+      requestAnimationFrame(() => kbdOverlay.classList.add('visible'));
+    }
     return;
   }
 });
@@ -4799,6 +4870,23 @@ function wire() {
   document.getElementById('vc-cancel-btn').addEventListener('click', closeVaultCreate);
   document.getElementById('vault-create-overlay').addEventListener('click', e => {
     if (e.target.id === 'vault-create-overlay') closeVaultCreate();
+  });
+
+  /* --- Keyboard shortcuts modal --- */
+  function closeKbdHelp() {
+    const ov = document.getElementById('kbd-help-overlay');
+    if (!ov) return;
+    ov.classList.remove('visible');
+    setTimeout(() => ov.classList.remove('open'), 200);
+  }
+  document.getElementById('kbd-close-btn').addEventListener('click', closeKbdHelp);
+  document.getElementById('kbd-help-overlay').addEventListener('click', e => {
+    if (e.target.id === 'kbd-help-overlay') closeKbdHelp();
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.getElementById('kbd-help-overlay')?.classList.contains('open')) {
+      closeKbdHelp();
+    }
   });
   // Keyboard shortcuts overlay
   document.getElementById('kb-close').addEventListener('click', closeKbHelp);
